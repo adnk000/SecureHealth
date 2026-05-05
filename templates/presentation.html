@@ -1,0 +1,672 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SecureHealth Presentation</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050a18;--panel:rgba(8,16,36,0.88);--border:rgba(148,163,184,0.15);
+  --accent:#6366f1;--accent2:#38bdf8;--accent3:#22c55e;--accent4:#f472b6;
+  --muted:#94a3b8;--text:#eef2ff;--shadow:0 32px 80px rgba(0,0,0,0.4);
+  font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+body{min-height:100vh;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* CANVAS */
+#canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* LAYOUT */
+.deck{position:relative;z-index:1;width:100%;height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:24px}
+
+/* SLIDES */
+.slides-wrap{flex:1;position:relative;overflow:hidden;border-radius:24px}
+.slide{
+  position:absolute;inset:0;
+  padding:44px 52px;
+  border-radius:24px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  backdrop-filter:blur(24px);
+  overflow-y:auto;
+  display:flex;flex-direction:column;justify-content:center;
+  opacity:0;transform:translateX(60px);
+  transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.exit-left{opacity:0;transform:translateX(-60px)}
+.slide#s0{background:linear-gradient(180deg,rgba(8,16,36,1),rgba(15,23,56,1));box-shadow:0 0 60px rgba(56,189,248,.08);backdrop-filter:none}
+.slide#s0::before{content:'';position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(circle at 18% 22%,rgba(99,102,241,.2),transparent 22%),
+  radial-gradient(circle at 75% 18%,rgba(56,189,248,.14),transparent 16%),
+  radial-gradient(circle at 50% 72%,rgba(236,72,153,.12),transparent 18%)}
+.slide#s0>*{position:relative;z-index:1}
+
+.slide#s9{background:linear-gradient(180deg,rgba(8,16,36,1),rgba(5,10,24,1));box-shadow:0 0 80px rgba(99,102,241,.15);backdrop-filter:none}
+.slide#s9::before{content:'';position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(circle at 45% 20%,rgba(99,102,241,.12),transparent 24%),
+  radial-gradient(circle at 20% 55%,rgba(34,197,94,.08),transparent 18%),
+  radial-gradient(circle at 80% 35%,rgba(248,113,113,.08),transparent 16%)}
+.slide#s9>*{position:relative;z-index:1}
+/* HEADINGS */
+.slide-num{font-size:.78rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent2);margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.slide-num span{width:6px;height:6px;border-radius:999px;background:var(--accent2);display:inline-block}
+h1{font-size:clamp(2.4rem,5.5vw,4.6rem);line-height:1.02;letter-spacing:-.05em;margin-bottom:.5rem}
+h1 .hl{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:clamp(1rem,1.8vw,1.5rem);color:var(--muted);max-width:780px;line-height:1.7;font-weight:400;margin-bottom:1rem}
+.lead{color:#cbd5e1;font-size:.97rem;line-height:1.9;max-width:720px;margin-bottom:1rem}
+
+/* GRID / PANELS */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:24px}
+.panel{
+  padding:24px;border-radius:20px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  transition:transform .3s,border-color .3s;
+  position:relative;overflow:hidden;
+}
+.panel::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(99,102,241,.06),transparent 60%);
+  border-radius:inherit;pointer-events:none;
+}
+.panel:hover{transform:translateY(-4px);border-color:rgba(99,102,241,.4)}
+.panel-icon{font-size:1.6rem;margin-bottom:.75rem}
+.panel-title{font-size:1rem;font-weight:700;color:#f8fafc;margin-bottom:.6rem;display:flex;align-items:center;gap:.5rem}
+.panel-text{color:var(--muted);line-height:1.8;font-size:.92rem}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:24px}
+.stat{
+  padding:22px 20px;border-radius:18px;text-align:center;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  transition:transform .3s;position:relative;overflow:hidden;
+}
+.stat:hover{transform:translateY(-3px)}
+.stat-icon{font-size:1.8rem;margin-bottom:.5rem}
+.stat-val{font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:.3rem}
+.stat-label{color:var(--muted);font-size:.85rem}
+
+/* BADGES */
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:1.4rem}
+.badge{
+  display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1rem;
+  border-radius:999px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.06);font-size:.82rem;font-weight:600;
+  transition:transform .2s,border-color .2s;
+}
+.badge:hover{transform:translateY(-2px);border-color:rgba(99,102,241,.5)}
+.badge .dot{width:7px;height:7px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+
+/* FEATURE CARDS */
+.feature-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:24px}
+.feature-card{
+  padding:20px;border-radius:16px;
+  background:rgba(255,255,255,0.035);
+  border:1px solid rgba(255,255,255,0.06);
+  transition:transform .3s,border-color .3s;
+}
+.feature-card:hover{transform:translateY(-3px);border-color:rgba(56,189,248,.3)}
+.feature-card strong{display:flex;align-items:center;gap:.4rem;margin-bottom:.7rem;color:#f8fafc;font-size:.97rem}
+.feature-card span{color:var(--muted);font-size:.88rem;line-height:1.75}
+
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.tag{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);color:#e2e8f0;font-size:.84rem}
+
+/* TEAM */
+.team-line{margin-top:1.4rem;color:var(--muted);font-size:.9rem;display:flex;align-items:center;flex-wrap:wrap;gap:.75rem}
+.team-pill{padding:.45rem .9rem;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:999px;color:#a5b4fc;font-weight:600;font-size:.82rem}
+
+/* THANK YOU PULSE */
+.ty-graphic{
+  display:flex;align-items:center;justify-content:center;
+  margin:1.5rem 0;font-size:4rem;gap:1rem;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* DIVIDER */
+.divider{width:40px;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;margin:.8rem 0 1.4rem}
+
+/* PROGRESS BAR */
+.progress-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:4px}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .4s ease}
+
+/* FOOTER */
+.footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-top:12px}
+.dots{display:flex;gap:8px;align-items:center}
+.dot-btn{width:10px;height:10px;border-radius:999px;background:rgba(148,163,184,.3);cursor:pointer;border:none;transition:all .25s;padding:0}
+.dot-btn.active{width:22px;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 12px rgba(99,102,241,.4)}
+.controls{display:flex;gap:10px}
+.btn{appearance:none;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:12px 22px;font-size:.88rem;font-weight:700;cursor:pointer;color:#f8fafc;background:rgba(255,255,255,.07);transition:all .2s;letter-spacing:.02em}
+.btn:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;box-shadow:0 8px 24px rgba(99,102,241,.3)}
+.btn.primary:hover{box-shadow:0 12px 30px rgba(99,102,241,.45)}
+.slide-counter{font-size:.8rem;color:var(--muted);font-weight:600}
+
+/* ARCHITECTURE FLOW */
+.arch-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0;margin:2rem 0 1rem}
+.arch-box{padding:12px 18px;border-radius:12px;font-size:.82rem;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.1)}
+.arch-arrow{color:var(--accent2);font-size:1.4rem;padding:0 6px}
+
+/* SCROLLBAR */
+.slide::-webkit-scrollbar{width:4px}
+.slide::-webkit-scrollbar-track{background:transparent}
+.slide::-webkit-scrollbar-thumb{background:rgba(99,102,241,.4);border-radius:999px}
+
+/* CLEARANCE BAR */
+.lvl-bar{display:flex;gap:0;border-radius:12px;overflow:hidden;margin-top:20px;height:8px}
+.lvl-seg{flex:1;transition:opacity .3s}
+.lvl-seg:hover{opacity:.7}
+
+/* CODE INLINE */
+code{background:rgba(99,102,241,.2);padding:2px 7px;border-radius:6px;font-size:.85rem;font-family:monospace}
+code.sky{background:rgba(56,189,248,.2)}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="deck">
+  <div class="slides-wrap" id="slidesWrap">
+
+    <!-- SLIDE 1 -->
+    <div class="slide active" id="s0">
+      <div class="slide-num"><span></span>01 / 10 — Introduction</div>
+      <h1>🏥 <span class="hl">SecureHealth</span></h1>
+      <div class="divider"></div>
+      <p class="subtitle">A Multi-Level Security Healthcare System with Patient Privacy &amp; Access Control</p>
+      <p class="lead">A working Flask prototype demonstrating MLS enforcement, PII protection, audit tracking, and emergency override for secure hospital data management.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot"></span>🔐 Bell-LaPadula</span>
+        <span class="badge"><span class="dot"></span>🕵️ PII Masking</span>
+        <span class="badge"><span class="dot"></span>📋 Audit Logging</span>
+        <span class="badge"><span class="dot"></span>🚨 Emergency Override</span>
+        <span class="badge"><span class="dot"></span>🐍 Flask + Python</span>
+        <span class="badge"><span class="dot"></span>🗄️ SQLite</span>
+      </div>
+      <div class="team-line">
+        <span>👥 Team</span>
+        <span class="team-pill">ADNAN KHAN — 235UCD008</span>
+        <span class="team-pill">AMIT SHARMA — 235UCD011</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide" id="s1">
+      <div class="slide-num"><span></span>02 / 10 — Overview</div>
+      <h1>🔍 What We Built</h1>
+      <div class="divider"></div>
+      <p class="subtitle">A secure medical records system focused on confidentiality, integrity, and accountability.</p>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-icon">🛡️</div>
+          <div class="panel-title">Confidential Access</div>
+          <div class="panel-text">Data visibility strictly depends on user clearance level. Sensitive patient records remain protected through enforced security policies at every request.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🎭</div>
+          <div class="panel-title">Masked Identities</div>
+          <div class="panel-text">Interns see only partial information. Doctors access full records when authorized. PII masking is applied automatically based on role classification.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">📊</div>
+          <div class="panel-title">Secure Auditing</div>
+          <div class="panel-text">Every failed login and modification action is timestamped and stored for compliance review. Doctors can export CSV audit reports.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">⚡</div>
+          <div class="panel-title">Emergency Override</div>
+          <div class="panel-text">Break-glass mechanism allows temporary clearance elevation during urgent care, with a full audit trail maintained throughout the session.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide" id="s2">
+      <div class="slide-num"><span></span>03 / 10 — Security Model</div>
+      <h1>🔒 Bell-LaPadula</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Applying formal academic security theory in a practical hospital database context.</p>
+      <div class="feature-list">
+        <div class="feature-card">
+          <strong>📖 No Read-Up</strong>
+          <span>Lower-clearance users cannot view records classified above their level. An intern cannot read a confidential patient record — enforced at every route.</span>
+        </div>
+        <div class="feature-card">
+          <strong>✍️ No Write-Down</strong>
+          <span>Only doctors can edit records. Data cannot flow downward to lower-classified storage, preventing unintended disclosure through modification.</span>
+        </div>
+        <div class="feature-card">
+          <strong>🏷️ Clearance Labels</strong>
+          <span>Every user and every record carry explicit security labels. Enforcement is consistent, automatic, and logged for auditing purposes.</span>
+        </div>
+        <div class="feature-card">
+          <strong>🧮 Formal Proof</strong>
+          <span>The model is derived from formal MAC (Mandatory Access Control) theory. Its correctness guarantees protect against privilege escalation attacks.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide" id="s3">
+      <div class="slide-num"><span></span>04 / 10 — Access Roles</div>
+      <h1>👤 User Roles</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Three tiered access levels mirroring realistic hospital staffing hierarchies.</p>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-icon">🧑‍⚕️</div>
+          <div class="stat-val">Level 1 — Intern</div>
+          <div class="stat-label">Read low-sensitivity records only. Patient names are automatically masked. Cannot modify any data. No audit log access.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-icon">👩‍⚕️</div>
+          <div class="stat-val">Level 2 — Nurse</div>
+          <div class="stat-label">View expanded patient records within clearance scope. Cannot modify records or access security logs. PII is partially visible.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-icon">🩺</div>
+          <div class="stat-val">Level 3 — Doctor</div>
+          <div class="stat-label">Full read/write access to patient records. Can export audit logs as CSV. Can invoke emergency override when necessary.</div>
+        </div>
+      </div>
+      <div class="lvl-bar">
+        <div class="lvl-seg" style="background:#38bdf8;opacity:.35"></div>
+        <div class="lvl-seg" style="background:#6366f1;opacity:.6"></div>
+        <div class="lvl-seg" style="background:#f472b6"></div>
+      </div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:6px">Clearance scale: Intern → Nurse → Doctor</p>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide" id="s4">
+      <div class="slide-num"><span></span>05 / 10 — IDS</div>
+      <h1>🚨 Intrusion Detection</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Monitoring suspicious behavior and protecting system integrity in real time.</p>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-icon">❌</div>
+          <div class="panel-title">Failed Login Tracking</div>
+          <div class="panel-text">Every invalid login attempt is timestamped and stored with username, IP, and timestamp in the security log table — ready for IDS review.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">📤</div>
+          <div class="panel-title">Audit CSV Export</div>
+          <div class="panel-text">Doctors can download a full security audit as a machine-readable CSV, enabling integration with SIEM tools or compliance reporting pipelines.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🆘</div>
+          <div class="panel-title">Break-Glass Override</div>
+          <div class="panel-text">Emergency route temporarily elevates clearance. The override event is itself logged, ensuring no unauthorized elevation goes undetected.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🔎</div>
+          <div class="panel-title">Real-Time Alerts</div>
+          <div class="panel-text">Dashboard surfaces recent suspicious events. Repeated failures from the same source are grouped and flagged for administrator review.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6 -->
+    <div class="slide" id="s5">
+      <div class="slide-num"><span></span>06 / 10 — Privacy</div>
+      <h1>🕵️ Patient Privacy</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Reducing exposure of sensitive information under lower-clearance access through automated controls.</p>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-icon">🪪</div>
+          <div class="panel-title">PII Protection</div>
+          <div class="panel-text">Patient names are automatically masked for interns. The masking logic runs server-side — the client never receives raw PII for unauthorized roles.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🔑</div>
+          <div class="panel-title">Password Hashing</div>
+          <div class="panel-text">All user credentials are hashed with a secure algorithm before storage. Plaintext passwords never persist in the database at any point.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🎛️</div>
+          <div class="panel-title">Scoped Dashboard Views</div>
+          <div class="panel-text">The dashboard filters records in real time based on clearance rules. Users see only what they are authorized for — no client-side filtering tricks.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🛂</div>
+          <div class="panel-title">Session Management</div>
+          <div class="panel-text">Flask session tokens enforce identity throughout. Expired or tampered sessions are rejected and the event is logged in the audit trail.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7 -->
+    <div class="slide" id="s6">
+      <div class="slide-num"><span></span>07 / 10 — Architecture</div>
+      <h1>🏗️ Architecture</h1>
+      <div class="divider"></div>
+      <p class="subtitle">How the stack works together for security, usability, and maintainability.</p>
+      <div class="arch-flow">
+        <div class="arch-box" style="background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.4);color:#a5b4fc">🌐 Browser</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.4);color:#7dd3fc">🐍 Flask App</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.4);color:#86efac">🔒 MLS Layer</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(244,114,182,.1);border-color:rgba(244,114,182,.4);color:#f9a8d4">🗄️ SQLite</div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-icon">🐍</div>
+          <div class="panel-title">Flask Application</div>
+          <div class="panel-text">Handles routing, session management, and secure template rendering. Every endpoint passes through the MLS enforcement middleware before data is served.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🗄️</div>
+          <div class="panel-title">SQLite Backend</div>
+          <div class="panel-text">Stores patient records, hashed user credentials, security labels, and audit logs in a portable, single-file embedded database.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🔒</div>
+          <div class="panel-title">MLS Security Layer</div>
+          <div class="panel-text">Enforces clearance checks, applies PII masking, validates write permissions, and triggers audit writes at every request lifecycle point.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8 -->
+    <div class="slide" id="s7">
+      <div class="slide-num"><span></span>08 / 10 — Implementation</div>
+      <h1>⚙️ Implementation</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Tech stack, security mechanisms, and design decisions behind SecureHealth.</p>
+      <div class="feature-list">
+        <div class="feature-card">
+          <strong>🐍 Backend</strong>
+          <span>Python 3 + Flask deliver routing, auth, and session management. Jinja2 templates render role-aware views server-side for zero client-side data leaks.</span>
+        </div>
+        <div class="feature-card">
+          <strong>🗄️ Storage</strong>
+          <span>SQLite provides a lightweight embedded database. Separate tables for patients, users, audit logs, and security labels keep concerns cleanly separated.</span>
+        </div>
+        <div class="feature-card">
+          <strong>🔐 Security</strong>
+          <span>Custom MLS enforcement, Werkzeug password hashing, Flask session tokens, and decorator-based clearance guards on every protected route.</span>
+        </div>
+        <div class="feature-card">
+          <strong>📋 Compliance</strong>
+          <span>Audit logs capture timestamp, actor, action, and outcome. CSV export enables integration with hospital compliance and reporting workflows.</span>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">Python 3</span>
+        <span class="tag">Flask</span>
+        <span class="tag">SQLite</span>
+        <span class="tag">Jinja2</span>
+        <span class="tag">Werkzeug</span>
+        <span class="tag">Bell-LaPadula</span>
+        <span class="tag">MAC</span>
+        <span class="tag">CSV Audit</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 9 -->
+    <div class="slide" id="s8">
+      <div class="slide-num"><span></span>09 / 10 — Demo</div>
+      <h1>🎬 Demo Flow</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Steps for launching the project and presenting the system live to evaluators.</p>
+      <div class="grid">
+        <div class="panel">
+          <div class="panel-icon">📦</div>
+          <div class="panel-title">1 — Install Dependencies</div>
+          <div class="panel-text">Run <code>pip install flask</code> and any other required packages in your Python virtual environment before launching.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">▶️</div>
+          <div class="panel-title">2 — Launch the App</div>
+          <div class="panel-text">Execute <code>python app.py</code> and open <code class="sky">http://127.0.0.1:5000</code> in your browser to access the dashboard.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🎭</div>
+          <div class="panel-title">3 — Role Demo</div>
+          <div class="panel-text">Log in as Intern, Nurse, then Doctor in sequence. Show how the dashboard and accessible records change at each clearance level.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">📤</div>
+          <div class="panel-title">4 — Audit Export</div>
+          <div class="panel-text">As Doctor, navigate to the audit route and export the security log CSV. Show how failed logins and overrides appear in the report.</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">👀 Show role-based login</span>
+        <span class="tag">🎭 Demonstrate PII masking</span>
+        <span class="tag">🚨 Test emergency override</span>
+        <span class="tag">📋 Export audit CSV</span>
+        <span class="tag">🔒 Show access denial</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 10 -->
+    <div class="slide" id="s9">
+      <div class="slide-num"><span></span>10 / 10 — Closing</div>
+      <div class="ty-graphic">🏥 🔐 ✅</div>
+      <h1>🙏 Thank You</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Questions and live demonstration are welcome!</p>
+      <p class="lead">SecureHealth demonstrates that formal security theory — Bell-LaPadula, MLS, mandatory access control — can be implemented practically in a real web application with a usable, inspectable interface.</p>
+      
+      <div class="team-line" style="margin-top:1.8rem">
+        <span>💡 Key Takeaway:</span>
+        <span style="color:#e2e8f0">Security models from academia can be pragmatically implemented in real systems.</span>
+      </div>
+    </div>
+
+  </div><!-- /slides-wrap -->
+
+  <div class="footer">
+    <div>
+      <div class="dots" id="dots"></div>
+      <div class="progress-wrap" style="width:200px;margin-top:6px">
+        <div class="progress-bar" id="progressBar" style="width:10%"></div>
+      </div>
+    </div>
+    <div class="slide-counter" id="slideCounter">1 / 10</div>
+    <div class="controls">
+      <button class="btn" id="prevBtn">← Previous</button>
+      <button class="btn primary" id="nextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOTAL = 10;
+let current = 0;
+let animating = false;
+
+// Particle Canvas
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let W, H;
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function createParticle(){
+  return {
+    x: Math.random()*W,
+    y: Math.random()*H,
+    r: Math.random()*1.8+0.4,
+    vx: (Math.random()-.5)*.4,
+    vy: (Math.random()-.5)*.4,
+    alpha: Math.random()*.55+.1,
+    hue: [210,260,190,320][Math.floor(Math.random()*4)]
+  };
+}
+
+for(let i=0;i<120;i++) particles.push(createParticle());
+
+let orbs = [
+  {x:.15,y:.2,r:180,hue:260,phase:0,speed:.008},
+  {x:.8,y:.15,r:220,hue:200,phase:1,speed:.006},
+  {x:.5,y:.85,r:150,hue:300,phase:2,speed:.01},
+  {x:.9,y:.7,r:130,hue:220,phase:3,speed:.007},
+];
+
+let confetti = [];
+function createConfetto(){
+  return {
+    x: Math.random()*W,
+    y: -Math.random()*H,
+    w: Math.random()*12+6,
+    h: Math.random()*4+4,
+    vx: (Math.random()-.5)*1.4,
+    vy: Math.random()*2.5+1.8,
+    rot: Math.random()*Math.PI*2,
+    rotSpeed: (Math.random()-.5)*0.12,
+    hue: Math.floor(Math.random()*360),
+    alpha: Math.random()*.75+.35,
+  };
+}
+for(let i=0;i<80;i++) confetti.push(createConfetto());
+
+function drawConfetti(){
+  confetti.forEach(c=>{
+    c.x += c.vx;
+    c.y += c.vy;
+    c.rot += c.rotSpeed;
+    if(c.y > H + 20){ c.y = -20; c.x = Math.random()*W; }
+    if(c.x < -40) c.x = W + 40;
+    if(c.x > W + 40) c.x = -40;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.rot);
+    ctx.fillStyle = `hsla(${c.hue},85%,65%,${c.alpha})`;
+    ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+    ctx.restore();
+  });
+}
+
+function drawAll(){
+  ctx.clearRect(0,0,W,H);
+  const isIntro = current===0;
+  const isThankYou = current===9;
+  if(!isIntro && !isThankYou) return;
+
+  // Orbs
+  orbs.forEach(o=>{
+    o.phase+=o.speed;
+    const ox = o.x*W+Math.sin(o.phase)*30;
+    const oy = o.y*H+Math.cos(o.phase*1.3)*20;
+    const grad = ctx.createRadialGradient(ox,oy,0,ox,oy,o.r);
+    grad.addColorStop(0,`hsla(${o.hue},80%,65%,${isThankYou ? 0.12 : 0.07})`);
+    grad.addColorStop(1,`hsla(${o.hue},80%,65%,0)`);
+    ctx.beginPath();
+    ctx.arc(ox,oy,o.r,0,Math.PI*2);
+    ctx.fillStyle=grad;
+    ctx.fill();
+  });
+
+  // Particles
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`hsla(${p.hue},80%,70%,${p.alpha})`;
+    ctx.fill();
+  });
+
+  if(isIntro){
+    // subtle connecting glow for intro
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x;
+        const dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle=`rgba(99,102,241,${.1*(1-d/120)})`;
+          ctx.lineWidth=.35;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  if(isThankYou){
+    drawConfetti();
+  }
+}
+
+function loop(){ drawAll(); requestAnimationFrame(loop); }
+loop();
+
+// Slide navigation
+const slides = document.querySelectorAll('.slide');
+const dotsContainer = document.getElementById('dots');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const progressBar = document.getElementById('progressBar');
+const slideCounter = document.getElementById('slideCounter');
+
+function goTo(idx, dir){
+  if(animating||idx===current||idx<0||idx>=TOTAL) return;
+  animating=true;
+  const old=slides[current];
+  const next=slides[idx];
+
+  next.style.transform=dir==='forward'?'translateX(60px)':'translateX(-60px)';
+  next.style.opacity='0';
+  next.classList.add('active');
+
+  requestAnimationFrame(()=>{
+    next.style.transform='';
+    next.style.opacity='';
+  });
+
+  setTimeout(()=>{
+    old.classList.remove('active');
+    current=idx;
+    update();
+    setTimeout(()=>{ animating=false; },520);
+  },50);
+}
+
+function update(){
+  dotsContainer.innerHTML='';
+  for(let i=0;i<TOTAL;i++){
+    const d=document.createElement('button');
+    d.className='dot-btn'+(i===current?' active':'');
+    d.setAttribute('aria-label','Go to slide '+(i+1));
+    d.onclick=(()=>{const idx=i;return()=>goTo(idx,idx>current?'forward':'back');})();
+    dotsContainer.appendChild(d);
+  }
+  prevBtn.style.visibility=current===0?'hidden':'visible';
+  nextBtn.textContent=current===TOTAL-1?'Finish ✓':'Next →';
+  progressBar.style.width=((current+1)/TOTAL*100)+'%';
+  slideCounter.textContent=(current+1)+' / '+TOTAL;
+}
+
+prevBtn.onclick=()=>{ if(current>0) goTo(current-1,'back'); };
+nextBtn.onclick=()=>{ if(current<TOTAL-1) goTo(current+1,'forward'); };
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') goTo(current+1,'forward');
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') goTo(current-1,'back');
+});
+
+update();
+</script>
+</body>
+</html>

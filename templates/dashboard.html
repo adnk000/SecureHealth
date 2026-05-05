@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SecureHealth Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="font-sans relative bg-slate-950 min-h-screen overflow-x-hidden overflow-y-auto">
+    <div id="tsparticles" class="fixed inset-0 z-0"></div>
+    <div class="relative z-10">
+        <!-- Top Navigation -->
+        <nav class="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🏥</span>
+                <span class="text-2xl font-extrabold tracking-tight text-gray-950">SecureHealth<span class="text-blue-600">DB</span></span>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <!-- User Profile & Clearance -->
+                <div class="flex items-center space-x-3 text-sm">
+                    {% if session['clearance'] == 3 %}
+                    <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-inner"><i class="fas fa-user-md text-xl"></i></div>
+                    {% elif session['clearance'] == 2 %}
+                    <div class="w-10 h-10 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shadow-inner"><i class="fas fa-user-nurse text-xl"></i></div>
+                    {% else %}
+                    <div class="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shadow-inner"><i class="fas fa-user-ninja text-xl"></i></div>
+                    {% endif %}
+                    <span class="font-bold text-gray-950">{{ session['username'] }}</span>
+                </div>
+                
+                <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full {{ 'bg-red-100 text-red-700 border-red-200' if session['clearance'] == 3 else 'bg-purple-100 text-purple-700 border-purple-200' if session['clearance'] == 2 else 'bg-amber-100 text-amber-700 border-amber-200' }}">
+                    <i class="fas fa-shield-alt text-xs mr-1"></i> Level {{ session['clearance'] }}
+                </span>
+
+                <!-- THE BREAK-GLASS BUTTON (Only visible to levels 1 & 2) -->
+                {% if session['clearance'] < 3 %}
+                <a href="/emergency_override" class="bg-red-600 text-white text-xs font-black px-4 py-1.5 rounded uppercase tracking-wider hover:bg-red-700 hover:animate-pulse transition shadow-[0_0_10px_rgba(220,38,38,0.7)] flex items-center gap-2">
+                    <i class="fas fa-siren-on"></i> BREAK GLASS
+                </a>
+                {% endif %}
+                
+                <a href="/logout" class="text-sm font-semibold text-gray-500 hover:text-red-600 transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-right-from-bracket"></i> Sign Out
+                </a>
+            </div>
+        </nav>
+
+        <main class="max-w-6xl mx-auto px-6 py-12 space-y-10">
+            <!-- IDS ALERTS -->
+            {% if session['clearance'] == 3 %}
+            <div class="bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl shadow-lg p-8 relative transition-all duration-300 hover:shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-3xl text-red-600">🚨</span>
+                        <h3 class="text-2xl font-extrabold text-gray-950 tracking-tight">Intrusion Detection & Audit Alerts</h3>
+                    </div>
+                    <a href="/download_audit" class="flex items-center space-x-2 bg-white border border-red-200 text-red-700 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-50 hover:border-red-300 transition shadow-sm hover:shadow-md">
+                        <i class="fas fa-download"></i> <span>Download Full Audit (.csv)</span>
+                    </a>
+                </div>
+                {% if alerts %}
+                <div class="border border-red-100 rounded-xl overflow-hidden shadow-sm bg-red-50/20 divide-y divide-red-100">
+                    {% for alert in alerts %}
+                    <div class="p-5 text-sm flex justify-between items-center hover:bg-red-50/50 transition">
+                        <div>
+                            <span class="font-semibold text-gray-950">Action by:</span> 
+                            <span class="text-red-700 font-mono bg-red-50 px-2 py-0.5 rounded">{{ alert[0] }}</span>
+                        </div>
+                        <span class="text-gray-500 text-xs font-mono">{{ alert[1] }}</span>
+                        <div>
+                            <span class="px-2.5 py-1.5 {{ 'bg-red-600 text-white animate-pulse' if 'CRITICAL' in alert[2] else 'bg-red-100 text-red-800' }} text-xs font-bold rounded uppercase tracking-wide flex items-center gap-2">
+                                <i class="fas fa-exclamation-triangle text-xs"></i> {{ alert[2] }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- PATIENT TABLE WITH SEARCH -->
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl">
+                <div class="px-8 py-6 border-b border-gray-100 bg-slate-50 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-2xl font-extrabold text-gray-950 tracking-tight">Patient Records Dashboard</h3>
+                        <p class="text-xs text-gray-500 mt-1 font-medium flex items-center gap-2">
+                            <i class="fas fa-filter text-blue-600"></i> Bell-LaPadula Active • <i class="fas fa-mask text-blue-600"></i> PII Data Masking
+                        </p>
+                    </div>
+                    
+                    <!-- LIVE SEARCH BAR -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="liveSearch" placeholder="Search names, diagnosis..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-72 shadow-sm text-sm transition-all" autocomplete="off">
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-700">
+                        <thead class="bg-white text-slate-500 text-xs uppercase font-bold tracking-wider border-b border-gray-100">
+                            <tr>
+                                <th class="px-8 py-5">Patient Name</th>
+                                <th class="px-8 py-5">Medical Diagnosis</th>
+                                <th class="px-8 py-5">Classification</th>
+                                <th class="px-8 py-5 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white" id="patientTableBody">
+                            {% for record in records %}
+                            <tr class="hover:bg-blue-50/30 transition duration-150 patient-row">
+                                <td class="px-8 py-5 text-gray-950 {{ 'font-mono text-gray-500' if '*' in record['patient_name'] else 'font-semibold' }}">
+                                    {{ record['patient_name'] }}
+                                </td>
+                                <td class="px-8 py-5">{{ record['diagnosis'] }}</td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold {{ 'bg-red-100 text-red-800 border-red-200' if record['security_label'] == 3 else 'bg-amber-100 text-amber-800 border-amber-200' if record['security_label'] == 2 else 'bg-emerald-100 text-emerald-800 border-emerald-200' }}">
+                                        <i class="fas fa-tag text-xs mr-1.5"></i> Level {{ record['security_label'] }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 text-right">
+                                    <a href="/patient/{{ record['id'] }}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition duration-200">
+                                        View File ➔
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <div id="noResults" class="hidden text-center py-10 text-gray-500">
+                        <i class="fas fa-search-minus text-3xl mb-3 text-gray-300"></i>
+                        <p class="font-medium">No matching records found in this clearance level.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Particle Background Logic
+        tsParticles.load("tsparticles", { background: { color: "#0a0f1e" }, fpsLimit: 120, interactivity: { events: { onClick: { enable: true, mode: "push" }, onHover: { enable: true, mode: "repulse" }, resize: true }, modes: { push: { quantity: 4 }, repulse: { distance: 100, duration: 0.4 } } }, particles: { color: { value: "#3b82f6" }, links: { color: "#3b82f6", distance: 150, enable: true, opacity: 0.3, width: 1 }, move: { enable: true, speed: 1.5 }, number: { density: { enable: true, area: 1000 }, value: 70 }, opacity: { value: 0.5 }, shape: { type: "circle" }, size: { value: { min: 1, max: 4 } } } });
+
+        // Live Search Logic
+        document.getElementById('liveSearch').addEventListener('input', function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll('.patient-row');
+            let hasVisibleRows = false;
+
+            rows.forEach(row => {
+                let rowText = row.textContent.toLowerCase();
+                if (rowText.includes(filter)) {
+                    row.style.display = '';
+                    hasVisibleRows = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            document.getElementById('noResults').classList.toggle('hidden', hasVisibleRows);
+        });
+    </script>
+</body>
+</html>
