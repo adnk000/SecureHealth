@@ -180,12 +180,12 @@ code.sky{background:rgba(56,189,248,.2)}
       <h1>🏥 <span class="hl">SecureHealth</span></h1>
       <div class="divider"></div>
       <p class="subtitle">A Multi-Level Security Healthcare System with Patient Privacy &amp; Access Control</p>
-      <p class="lead">A working Flask prototype demonstrating MLS enforcement, PII protection, audit tracking, and emergency override for secure hospital data management.</p>
+      <p class="lead">A Flask prototype demonstrating multi-level access control, PII masking, audit tracking, and controlled emergency-access requests for hospital records.</p>
       <div class="badges">
         <span class="badge"><span class="dot"></span>🔐 Bell-LaPadula</span>
         <span class="badge"><span class="dot"></span>🕵️ PII Masking</span>
         <span class="badge"><span class="dot"></span>📋 Audit Logging</span>
-        <span class="badge"><span class="dot"></span>🚨 Emergency Override</span>
+        <span class="badge"><span class="dot"></span>🚨 Emergency Access Request</span>
         <span class="badge"><span class="dot"></span>🐍 Flask + Python</span>
         <span class="badge"><span class="dot"></span>🗄️ SQLite</span>
       </div>
@@ -201,7 +201,7 @@ code.sky{background:rgba(56,189,248,.2)}
       <div class="slide-num"><span></span>02 / 10 — Overview</div>
       <h1>🔍 What We Built</h1>
       <div class="divider"></div>
-      <p class="subtitle">A secure medical records system focused on confidentiality, integrity, and accountability.</p>
+      <p class="subtitle">A demonstration medical-records application focused on confidentiality, access control, and accountability.</p>
       <div class="grid">
         <div class="panel">
           <div class="panel-icon">🛡️</div>
@@ -211,7 +211,7 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">🎭</div>
           <div class="panel-title">Masked Identities</div>
-          <div class="panel-text">Interns see only partial information. Doctors access full records when authorized. PII masking is applied automatically based on role classification.</div>
+          <div class="panel-text">Interns see masked patient names. Nurses and doctors see names according to their higher clearance, while record visibility remains restricted by classification.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">📊</div>
@@ -220,8 +220,8 @@ code.sky{background:rgba(56,189,248,.2)}
         </div>
         <div class="panel">
           <div class="panel-icon">⚡</div>
-          <div class="panel-title">Emergency Override</div>
-          <div class="panel-text">Break-glass mechanism allows temporary clearance elevation during urgent care, with a full audit trail maintained throughout the session.</div>
+          <div class="panel-title">Emergency Access Request</div>
+          <div class="panel-text">Lower-clearance users can submit an emergency-access request. It is logged for review and does not automatically grant higher privileges.</div>
         </div>
       </div>
     </div>
@@ -238,16 +238,16 @@ code.sky{background:rgba(56,189,248,.2)}
           <span>Lower-clearance users cannot view records classified above their level. An intern cannot read a confidential patient record — enforced at every route.</span>
         </div>
         <div class="feature-card">
-          <strong>✍️ No Write-Down</strong>
-          <span>Only doctors can edit records. Data cannot flow downward to lower-classified storage, preventing unintended disclosure through modification.</span>
+          <strong>✍️ Restricted Write Access</strong>
+          <span>Only Level 3 users can edit patient records. This prototype restricts editing by role; it does not claim to implement the complete Bell-LaPadula *-property.</span>
         </div>
         <div class="feature-card">
           <strong>🏷️ Clearance Labels</strong>
           <span>Every user and every record carry explicit security labels. Enforcement is consistent, automatic, and logged for auditing purposes.</span>
         </div>
         <div class="feature-card">
-          <strong>🧮 Formal Proof</strong>
-          <span>The model is derived from formal MAC (Mandatory Access Control) theory. Its correctness guarantees protect against privilege escalation attacks.</span>
+          <strong>🧪 Policy Enforcement</strong>
+          <span>Server-side checks compare the user's clearance with each record's classification before returning protected data.</span>
         </div>
       </div>
     </div>
@@ -267,12 +267,12 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="stat">
           <div class="stat-icon">👩‍⚕️</div>
           <div class="stat-val">Level 2 — Nurse</div>
-          <div class="stat-label">View expanded patient records within clearance scope. Cannot modify records or access security logs. PII is partially visible.</div>
+          <div class="stat-label">View records classified at Level 1 or 2. Cannot modify records or access security logs. Names are not masked at this level.</div>
         </div>
         <div class="stat">
           <div class="stat-icon">🩺</div>
           <div class="stat-val">Level 3 — Doctor</div>
-          <div class="stat-label">Full read/write access to patient records. Can export audit logs as CSV. Can invoke emergency override when necessary.</div>
+          <div class="stat-label">Read access to all three record levels and permission to edit records. Can export audit logs as CSV.</div>
         </div>
       </div>
       <div class="lvl-bar">
@@ -293,22 +293,22 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">❌</div>
           <div class="panel-title">Failed Login Tracking</div>
-          <div class="panel-text">Every invalid login attempt is timestamped and stored with username, IP, and timestamp in the security log table — ready for IDS review.</div>
+          <div class="panel-text">Every invalid login attempt is timestamped and stored with the submitted username and event type in the security log table.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">📤</div>
           <div class="panel-title">Audit CSV Export</div>
-          <div class="panel-text">Doctors can download a full security audit as a machine-readable CSV, enabling integration with SIEM tools or compliance reporting pipelines.</div>
+          <div class="panel-text">Level 3 users can download the recorded security events as a CSV file for review.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🆘</div>
-          <div class="panel-title">Break-Glass Override</div>
-          <div class="panel-text">Emergency route temporarily elevates clearance. The override event is itself logged, ensuring no unauthorized elevation goes undetected.</div>
+          <div class="panel-title">Emergency Access Requests</div>
+          <div class="panel-text">Emergency-access requests are recorded for review. A request never changes the user's clearance level.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🔎</div>
-          <div class="panel-title">Real-Time Alerts</div>
-          <div class="panel-text">Dashboard surfaces recent suspicious events. Repeated failures from the same source are grouped and flagged for administrator review.</div>
+          <div class="panel-title">Audit Event Review</div>
+          <div class="panel-text">Dashboard surfaces recent suspicious events. Recent security events are displayed to Level 3 users for manual review.</div>
         </div>
       </div>
     </div>
@@ -333,12 +333,12 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">🎛️</div>
           <div class="panel-title">Scoped Dashboard Views</div>
-          <div class="panel-text">The dashboard filters records in real time based on clearance rules. Users see only what they are authorized for — no client-side filtering tricks.</div>
+          <div class="panel-text">The server filters records by clearance before rendering the dashboard. The search field only filters the records already returned to the current user.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🛂</div>
           <div class="panel-title">Session Management</div>
-          <div class="panel-text">Flask session tokens enforce identity throughout. Expired or tampered sessions are rejected and the event is logged in the audit trail.</div>
+          <div class="panel-text">Flask's signed session cookie maintains login state. HttpOnly, SameSite, and a configurable secure-cookie flag help protect the session.</div>
         </div>
       </div>
     </div>
@@ -362,7 +362,7 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">🐍</div>
           <div class="panel-title">Flask Application</div>
-          <div class="panel-text">Handles routing, session management, and secure template rendering. Every endpoint passes through the MLS enforcement middleware before data is served.</div>
+          <div class="panel-text">Handles routing, session management, and secure template rendering. Protected patient routes perform server-side clearance checks before returning records.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🗄️</div>
@@ -386,7 +386,7 @@ code.sky{background:rgba(56,189,248,.2)}
       <div class="feature-list">
         <div class="feature-card">
           <strong>🐍 Backend</strong>
-          <span>Python 3 + Flask deliver routing, auth, and session management. Jinja2 templates render role-aware views server-side for zero client-side data leaks.</span>
+          <span>Python 3 + Flask deliver routing, auth, and session management. Jinja2 templates render role-aware views server-side.</span>
         </div>
         <div class="feature-card">
           <strong>🗄️ Storage</strong>
@@ -394,7 +394,7 @@ code.sky{background:rgba(56,189,248,.2)}
         </div>
         <div class="feature-card">
           <strong>🔐 Security</strong>
-          <span>Custom MLS enforcement, Werkzeug password hashing, Flask session tokens, and decorator-based clearance guards on every protected route.</span>
+          <span>Server-side clearance checks, Werkzeug scrypt password hashing, CSRF tokens for POST requests, and hardened Flask session-cookie settings.</span>
         </div>
         <div class="feature-card">
           <strong>📋 Compliance</strong>
@@ -423,12 +423,12 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">📦</div>
           <div class="panel-title">1 — Install Dependencies</div>
-          <div class="panel-text">Run <code>pip install flask</code> and any other required packages in your Python virtual environment before launching.</div>
+          <div class="panel-text">Create a virtual environment, then run <code>pip install -r requirements.txt</code> before launching.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">▶️</div>
           <div class="panel-title">2 — Launch the App</div>
-          <div class="panel-text">Execute <code>python app.py</code> and open <code class="sky">http://127.0.0.1:5000</code> in your browser to access the dashboard.</div>
+          <div class="panel-text">Set a strong <code>SECRET_KEY</code> environment variable, execute <code>python app.py</code>, and open <code class="sky">http://127.0.0.1:5000</code>.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🎭</div>
@@ -438,13 +438,13 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">📤</div>
           <div class="panel-title">4 — Audit Export</div>
-          <div class="panel-text">As Doctor, navigate to the audit route and export the security log CSV. Show how failed logins and overrides appear in the report.</div>
+          <div class="panel-text">As Doctor, open the audit dashboard and export the security log CSV. Show how failed logins, record updates, and emergency-access requests appear in the report.</div>
         </div>
       </div>
       <div class="tags">
         <span class="tag">👀 Show role-based login</span>
         <span class="tag">🎭 Demonstrate PII masking</span>
-        <span class="tag">🚨 Test emergency override</span>
+        <span class="tag">🚨 Submit an emergency-access request and verify it is logged without changing clearance</span>
         <span class="tag">📋 Export audit CSV</span>
         <span class="tag">🔒 Show access denial</span>
       </div>

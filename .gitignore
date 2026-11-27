@@ -1,4 +1,12 @@
 venv/
+.venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.env
+.env.*
+!.env.example
+.secret_key
+hospital.db
+.pytest_cache/
+.coverage
 hospital.db
