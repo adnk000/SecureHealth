@@ -1,179 +1,244 @@
-from flask import Flask, render_template, request, session, redirect, make_response
-import sqlite3
 import csv
+import hmac
 import io
-from datetime import datetime
+import os
+import secrets
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
 
-# Importing from our modular files
-from security import hash_password, can_user_read, mask_name
+from flask import Flask, abort, make_response, redirect, render_template, request, session, url_for
+
 from database import init_db
+from security import can_user_read, hash_password, mask_name, verify_password
+
+BASE_DIR = Path(__file__).resolve().parent
+DATABASE_PATH = BASE_DIR / "hospital.db"
 
 app = Flask(__name__)
-app.secret_key = "secret_security_key"
+app.config.update(
+    SECRET_KEY=os.environ.get("SECRET_KEY"),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
+    PERMANENT_SESSION_LIFETIME=1800,
+)
+
+if not app.config["SECRET_KEY"]:
+    raise RuntimeError(
+        "SECRET_KEY is not set. Set it in your environment before starting SecureHealth."
+    )
 
 def get_db_connection():
-    conn = sqlite3.connect('hospital.db')
-    conn.row_factory = sqlite3.Row # This lets us use column names like dictionaries
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     return conn
 
-@app.route('/')
+def utc_timestamp():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+def log_event(username, event):
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO security_logs (attempted_user, attempt_time, event_type) VALUES (?, ?, ?)",
+        (username, utc_timestamp(), event),
+    )
+    conn.commit()
+    conn.close()
+
+@app.before_request
+def protect_post_requests():
+    # Create a per-session CSRF token and validate every state-changing POST.
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+
+    if request.method == "POST":
+        supplied = request.form.get("csrf_token", "")
+        expected = session.get("csrf_token", "")
+        if not expected or not hmac.compare_digest(supplied, expected):
+            abort(400, description="Invalid or missing CSRF token.")
+
+@app.context_processor
+def inject_csrf_token():
+    return {"csrf_token": session.get("csrf_token", "")}
+
+@app.route("/")
 def home():
-    if 'username' not in session:
-        return redirect('/login')
-        
+    if "username" not in session:
+        return redirect(url_for("login"))
+
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM records')
-    all_records = cursor.fetchall()
-    
+    all_records = conn.execute("SELECT * FROM records").fetchall()
+    alerts = []
+    if session.get("clearance") == 3:
+        alerts = conn.execute(
+            "SELECT * FROM security_logs ORDER BY attempt_time DESC"
+        ).fetchall()
+    conn.close()
+
     accessible_records = []
-    for r in all_records:
-        if can_user_read(session['clearance'], r['security_label']):
-            record_dict = dict(r)
-            if session['clearance'] == 1:
-                record_dict['patient_name'] = mask_name(record_dict['patient_name'])
-            accessible_records.append(record_dict)
-            
-    security_alerts = []
-    if session['clearance'] == 3: # Only Level 3 (Doctor/Admin) sees IDS alerts
-        cursor.execute('SELECT * FROM security_logs ORDER BY attempt_time DESC')
-        security_alerts = cursor.fetchall()
-        
-    conn.close()
-    return render_template('dashboard.html', records=accessible_records, alerts=security_alerts)
+    for record in all_records:
+        if can_user_read(session.get("clearance"), record["security_label"]):
+            item = dict(record)
+            if session.get("clearance") == 1:
+                item["patient_name"] = mask_name(item["patient_name"])
+            accessible_records.append(item)
 
-@app.route('/presentation')
+    return render_template(
+        "dashboard.html", records=accessible_records, alerts=alerts
+    )
+
+@app.route("/presentation")
 def presentation():
-    return render_template('presentation.html')
+    return render_template("presentation.html")
 
-@app.route('/patient/<int:patient_id>')
+@app.route("/patient/<int:patient_id>")
 def patient_detail(patient_id):
-    if 'username' not in session:
-        return redirect('/login')
-        
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM records WHERE id = ?', (patient_id,))
-    record = cursor.fetchone()
-    conn.close()
-    
-    # Enforce Bell-LaPadula on the detail page
-    if record and can_user_read(session['clearance'], record['security_label']):
-        record_dict = dict(record)
-        if session['clearance'] == 1:
-            record_dict['patient_name'] = mask_name(record_dict['patient_name'])
-        return render_template('detail.html', record=record_dict)
-    else:
-        return "Security Violation: Access Denied by Bell-LaPadula Model", 403
+    if "username" not in session:
+        return redirect(url_for("login"))
 
-@app.route('/patient/<int:patient_id>/edit', methods=['GET', 'POST'])
+    conn = get_db_connection()
+    record = conn.execute(
+        "SELECT * FROM records WHERE id = ?", (patient_id,)
+    ).fetchone()
+    conn.close()
+
+    if not record or not can_user_read(
+        session.get("clearance"), record["security_label"]
+    ):
+        abort(403, description="Access denied by the Bell-LaPadula policy.")
+
+    item = dict(record)
+    if session.get("clearance") == 1:
+        item["patient_name"] = mask_name(item["patient_name"])
+    return render_template("detail.html", record=item)
+
+@app.route("/patient/<int:patient_id>/edit", methods=["GET", "POST"])
 def edit_patient(patient_id):
-    if 'username' not in session:
-        return redirect('/login')
-        
-    # Enforce Write Access Control: Only Level 3 Doctors can edit
-    if session.get('clearance') != 3:
-        return "Security Violation: Write-Access Denied. Only Clearance Level 3 can edit records.", 403
+    if "username" not in session:
+        return redirect(url_for("login"))
+    if session.get("clearance") != 3:
+        abort(403, description="Only Level 3 users can edit medical records.")
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    record = conn.execute(
+        "SELECT * FROM records WHERE id = ?", (patient_id,)
+    ).fetchone()
 
-    if request.method == 'POST':
-        new_diagnosis = request.form['diagnosis']
-        new_medicines = request.form['medicines']
-        
-        # Update the database
-        cursor.execute('UPDATE records SET diagnosis = ?, prescribed_medicines = ? WHERE id = ?', 
-                       (new_diagnosis, new_medicines, patient_id))
-        
-        # AUDITING: Log that the doctor made a change
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("INSERT INTO security_logs VALUES (?, ?, ?)", 
-                       (session['username'], timestamp, f"UPDATED_RECORD_ID_{patient_id}"))
-        
+    if not record:
+        conn.close()
+        abort(404)
+
+    if request.method == "POST":
+        diagnosis = request.form.get("diagnosis", "").strip()
+        medicines = request.form.get("medicines", "").strip()
+        if not diagnosis or not medicines:
+            conn.close()
+            return render_template(
+                "edit.html", record=record, error="Both fields are required."
+            ), 400
+
+        conn.execute(
+            "UPDATE records SET diagnosis = ?, prescribed_medicines = ? WHERE id = ?",
+            (diagnosis, medicines, patient_id),
+        )
+        conn.execute(
+            "INSERT INTO security_logs (attempted_user, attempt_time, event_type) VALUES (?, ?, ?)",
+            (session["username"], utc_timestamp(), f"UPDATED_RECORD_ID_{patient_id}"),
+        )
         conn.commit()
         conn.close()
-        return redirect(f'/patient/{patient_id}')
+        return redirect(url_for("patient_detail", patient_id=patient_id))
 
-    # For GET request, fetch current data to pre-fill the form
-    cursor.execute('SELECT * FROM records WHERE id = ?', (patient_id,))
-    record = cursor.fetchone()
     conn.close()
-    return render_template('edit.html', record=record)
+    return render_template("edit.html", record=record)
 
-# --- THE HIGHLIGHT FEATURE: BREAK-GLASS PROTOCOL ---
-@app.route('/emergency_override')
+@app.route("/emergency_override", methods=["POST"])
 def emergency_override():
-    if 'username' in session and session['clearance'] < 3:
-        # 1. Log the severe security exception immediately
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("INSERT INTO security_logs VALUES (?, ?, ?)", 
-                       (session['username'], timestamp, "CRITICAL: BREAK-GLASS PROTOCOL ACTIVATED"))
-        conn.commit()
-        conn.close()
-        
-        # 2. Temporarily elevate clearance to Level 3 for this session
-        session['clearance'] = 3 
-        session['emergency_mode'] = True
-        
-    return redirect('/')
+    if "username" not in session:
+        return redirect(url_for("login"))
 
-@app.route('/login', methods=['GET', 'POST'])
+    # A user cannot grant themselves a higher clearance level.
+    log_event(session["username"], "EMERGENCY_ACCESS_REQUESTED - approval required")
+    return redirect(url_for("home"))
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        user = request.form['username']
-        pwd = hash_password(request.form['password'])
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT clearance_level FROM users WHERE username=? AND password=?", (user, pwd))
-        result = cursor.fetchone()
-        
-        if result:
-            session['username'] = user
-            session['clearance'] = result['clearance_level']
-            conn.close()
-            return redirect('/')
-        else:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute("INSERT INTO security_logs VALUES (?, ?, ?)", (user, timestamp, "FAILED_LOGIN_ATTEMPT"))
-            conn.commit()
-            conn.close()
-            return render_template('login.html', error="Invalid Login! Attempt logged.")
-            
-    return render_template('login.html', error=None)
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
-@app.route('/download_audit')
+        conn = get_db_connection()
+        row = conn.execute(
+            "SELECT password, clearance_level FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+
+        valid = False
+        needs_upgrade = False
+        if row:
+            valid, needs_upgrade = verify_password(row["password"], password)
+
+        if valid:
+            if needs_upgrade:
+                conn.execute(
+                    "UPDATE users SET password = ? WHERE username = ?",
+                    (hash_password(password), username),
+                )
+                conn.commit()
+            conn.close()
+
+            session.clear()
+            session["username"] = username
+            session["clearance"] = int(row["clearance_level"])
+            session["csrf_token"] = secrets.token_urlsafe(32)
+            session.permanent = True
+            log_event(username, "SUCCESSFUL_LOGIN")
+            return redirect(url_for("home"))
+
+        conn.close()
+        log_event(username or "unknown", "FAILED_LOGIN_ATTEMPT")
+        return render_template("login.html", error="Invalid login credentials."), 401
+
+    return render_template("login.html", error=None)
+
+@app.route("/download_audit")
 def download_audit():
-    if session.get('clearance') != 3: 
-        return "Access Denied: Insufficient Clearance", 403
+    if "username" not in session:
+        return redirect(url_for("login"))
+    if session.get("clearance") != 3:
+        abort(403, description="Only Level 3 users can download audit logs.")
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM security_logs ORDER BY attempt_time DESC')
-    logs = cursor.fetchall()
+    logs = conn.execute(
+        "SELECT * FROM security_logs ORDER BY attempt_time DESC"
+    ).fetchall()
     conn.close()
 
-    si = io.StringIO()
-    cw = csv.writer(si)
-    cw.writerow(['Attempted Username', 'Timestamp', 'Event Type'])
-    cw.writerows(logs)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Attempted Username", "Timestamp", "Event Type"])
+    writer.writerows([tuple(row) for row in logs])
 
-    response = make_response(si.getvalue())
-    response.headers["Content-Disposition"] = "attachment; filename=IDS_Audit_Report.csv"
-    response.headers["Content-type"] = "text/csv"
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=SecureHealth_Audit_Report.csv"
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Cache-Control"] = "no-store"
     return response
 
-@app.route('/logout')
+@app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
-    return redirect('/login')
+    return redirect(url_for("login"))
 
-if __name__ == '__main__':
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
-
-
-    
+    app.run(debug=False)
