@@ -109,8 +109,25 @@ def home():
                 item["patient_name"] = mask_name(item["patient_name"])
             accessible_records.append(item)
 
+    # Dashboard metrics are calculated only from records the current user
+    # is authorized to see, preventing aggregate-count information leaks.
+    classification_counts = {1: 0, 2: 0, 3: 0}
+    for item in accessible_records:
+        label = item.get("security_label")
+        if label in classification_counts:
+            classification_counts[label] += 1
+
+    dashboard_stats = {
+        "accessible_records": len(accessible_records),
+        "classification_counts": classification_counts,
+        "security_events": len(alerts) if session.get("clearance") == 3 else None,
+    }
+
     return render_template(
-        "dashboard.html", records=accessible_records, alerts=alerts
+        "dashboard.html",
+        records=accessible_records,
+        alerts=alerts,
+        dashboard_stats=dashboard_stats,
     )
 
 
