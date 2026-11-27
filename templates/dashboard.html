@@ -61,10 +61,27 @@
             </section>
             {% if session['clearance'] == 3 %}
             <div class="bg-white/95 border border-gray-100 rounded-2xl shadow-lg p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-extrabold text-gray-950">Intrusion Detection & Audit Alerts</h3>
-                    <a href="/download_audit" class="bg-white border border-red-200 text-red-700 px-5 py-2.5 rounded-lg text-sm font-bold">Download Audit CSV</a>
+                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+                    <div>
+                        <h3 class="text-2xl font-extrabold text-gray-950">Intrusion Detection & Audit Alerts</h3>
+                        <p class="text-xs text-gray-500 mt-1">Showing {{ alerts|length }} of {{ audit_total }} recorded events (latest 200)</p>
+                    </div>
+                    <a href="/download_audit" class="bg-white border border-red-200 text-red-700 px-5 py-2.5 rounded-lg text-sm font-bold text-center">Download Audit CSV</a>
                 </div>
+                <form method="get" action="{{ url_for('home') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <input type="search" name="audit_user" value="{{ audit_user_filter }}" placeholder="Search username..." aria-label="Search audit username" class="px-4 py-2 border border-gray-200 rounded-lg text-sm">
+                    <select name="audit_event" aria-label="Filter audit event type" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                        <option value="all" {% if audit_event_filter == 'all' %}selected{% endif %}>All event types</option>
+                        <option value="successful" {% if audit_event_filter == 'successful' %}selected{% endif %}>Successful logins</option>
+                        <option value="failed" {% if audit_event_filter == 'failed' %}selected{% endif %}>Failed logins</option>
+                        <option value="updates" {% if audit_event_filter == 'updates' %}selected{% endif %}>Record updates</option>
+                        <option value="emergency" {% if audit_event_filter == 'emergency' %}selected{% endif %}>Emergency requests</option>
+                    </select>
+                    <div class="flex gap-2">
+                        <button type="submit" class="flex-1 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700">Apply filters</button>
+                        <a href="{{ url_for('home') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700">Clear</a>
+                    </div>
+                </form>
                 {% if alerts %}
                 <div class="border border-red-100 rounded-xl overflow-hidden divide-y divide-red-100">
                     {% for alert in alerts %}
