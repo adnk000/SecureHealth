@@ -9,4 +9,3 @@ __pycache__/
 hospital.db
 .pytest_cache/
 .coverage
-hospital.db
