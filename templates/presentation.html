@@ -215,8 +215,18 @@ code.sky{background:rgba(56,189,248,.2)}
         </div>
         <div class="panel">
           <div class="panel-icon">📊</div>
+          <div class="panel-title">Dashboard Analytics</div>
+          <div class="panel-text">Role-aware statistics summarize the records available to the signed-in user. Counts are calculated only from records that user is authorized to access.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">🔎</div>
+          <div class="panel-title">Patient Search &amp; Filters</div>
+          <div class="panel-text">Search visible patient rows by name or diagnosis, filter by an allowed classification level, combine filters, and reset the results.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-icon">📋</div>
           <div class="panel-title">Secure Auditing</div>
-          <div class="panel-text">Every failed login and modification action is timestamped and stored for compliance review. Doctors can export CSV audit reports.</div>
+          <div class="panel-text">Security events are timestamped and stored for review. Doctors can filter recent audit events by username and event category, then export CSV reports.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">⚡</div>
@@ -308,7 +318,7 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">🔎</div>
           <div class="panel-title">Audit Event Review</div>
-          <div class="panel-text">Dashboard surfaces recent suspicious events. Recent security events are displayed to Level 3 users for manual review.</div>
+          <div class="panel-text">Level 3 users can filter audit events by username and category: successful logins, failed logins, record updates, and emergency-access requests. The dashboard displays up to the latest 200 matching events.</div>
         </div>
       </div>
     </div>
@@ -397,8 +407,16 @@ code.sky{background:rgba(56,189,248,.2)}
           <span>Server-side clearance checks, Werkzeug scrypt password hashing, CSRF tokens for POST requests, and hardened Flask session-cookie settings.</span>
         </div>
         <div class="feature-card">
-          <strong>📋 Compliance</strong>
-          <span>Audit logs capture timestamp, actor, action, and outcome. CSV export enables integration with hospital compliance and reporting workflows.</span>
+          <strong>📊 Dashboard &amp; Search</strong>
+          <span>Role-aware record counts, patient-name and diagnosis search, classification filters, combined filtering, and a live results count over authorized records.</span>
+        </div>
+        <div class="feature-card">
+          <strong>📋 Audit Monitoring</strong>
+          <span>Doctors can search audit events by username, filter by event category, review up to 200 matching recent events, and download the audit CSV.</span>
+        </div>
+        <div class="feature-card">
+          <strong>🧪 Automated Tests</strong>
+          <span>15 automated tests currently cover security helper functions and selected Flask routes, including access-control and CSRF checks.</span>
         </div>
       </div>
       <div class="tags">
