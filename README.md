@@ -35,12 +35,6 @@ git clone https://github.com/adnk000/SecureHealth.git
 cd SecureHealth
 ```
 
-If you are testing the hardening changes before they are merged, switch to the `security-hardening` branch:
-
-```bash
-git checkout security-hardening
-```
-
 ### 2. Create and activate a virtual environment
 
 Windows PowerShell:
@@ -122,6 +116,16 @@ A user cannot read a record above their clearance. Level 1 users receive masked 
 - All state-changing POST forms require a CSRF token.
 - Emergency access is a logged request only. It does not grant privileges automatically.
 - The built-in Flask development server is for local demonstration, not production hosting.
+
+## Run the security helper tests
+
+After installing dependencies, run:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+These tests cover password hashing and legacy-hash migration, invalid passwords, Bell-LaPadula read checks, and name masking.
 
 ## Suggested demonstration
 
