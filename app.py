@@ -95,10 +95,44 @@ def home():
     conn = get_db_connection()
     all_records = conn.execute("SELECT * FROM records").fetchall()
     alerts = []
+    audit_total = 0
+    audit_user_filter = request.args.get("audit_user", "").strip()[:80]
+    audit_event_filter = request.args.get("audit_event", "all").strip()
+
     if session.get("clearance") == 3:
+        audit_total = conn.execute(
+            "SELECT COUNT(*) FROM security_logs"
+        ).fetchone()[0]
+
+        audit_conditions = []
+        audit_parameters = []
+
+        if audit_user_filter:
+            audit_conditions.append("attempted_user LIKE ?")
+            audit_parameters.append(f"%{audit_user_filter}%")
+
+        event_patterns = {
+            "successful": "SUCCESSFUL_LOGIN",
+            "failed": "FAILED_LOGIN_ATTEMPT",
+            "updates": "UPDATED_RECORD_ID_%",
+            "emergency": "EMERGENCY_ACCESS_REQUESTED%",
+        }
+        if audit_event_filter in event_patterns:
+            audit_conditions.append("event_type LIKE ?")
+            audit_parameters.append(event_patterns[audit_event_filter])
+        else:
+            audit_event_filter = "all"
+
+        where_clause = (
+            " WHERE " + " AND ".join(audit_conditions)
+            if audit_conditions else ""
+        )
         alerts = conn.execute(
-            "SELECT * FROM security_logs ORDER BY attempt_time DESC"
+            "SELECT * FROM security_logs" + where_clause +
+            " ORDER BY attempt_time DESC LIMIT 200",
+            audit_parameters,
         ).fetchall()
+
     conn.close()
 
     accessible_records = []
@@ -128,6 +162,9 @@ def home():
         records=accessible_records,
         alerts=alerts,
         dashboard_stats=dashboard_stats,
+        audit_total=audit_total,
+        audit_user_filter=audit_user_filter,
+        audit_event_filter=audit_event_filter,
     )
 
 
