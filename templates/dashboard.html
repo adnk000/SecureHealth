@@ -3,183 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SecureHealth Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+    <meta name="theme-color" content="#082c55">
+    <title>SecureHealth | Patient Records</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { color-scheme:light; --navy:#082c55; --blue:#145b91; --gold:#e6b436; --ink:#1d3042; --muted:#687b8d; --line:#dce4ea; --canvas:#f3f6f8; --white:#fff; }
+        * { box-sizing:border-box; }
+        body { margin:0;background:var(--canvas);color:var(--ink);font-family:"DM Sans",Arial,sans-serif;font-size:14px; }
+        button,input,select { font:inherit; }
+        a { color:inherit; }
+        .hidden { display:none!important; }
+        .top-rule { height:4px;background:var(--gold); }
+        .site-header { position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(10,35,58,.035); }
+        .nav-inner { min-height:72px;max-width:1380px;margin:auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:24px; }
+        .brand { display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:var(--navy); }
+        .brand-mark { display:grid;width:38px;height:38px;place-items:center;border-radius:6px;background:var(--navy);color:#fff;font-size:16px; }
+        .brand-name { font-family:Manrope,Arial,sans-serif;font-size:18px;font-weight:800;letter-spacing:-.6px; }
+        .brand-name span { color:var(--blue); }
+        .header-tools { display:flex;align-items:center;justify-content:flex-end;gap:18px; }
+        .account { display:flex;align-items:center;gap:10px; }
+        .account-avatar { display:grid;width:34px;height:34px;place-items:center;border-radius:50%;background:#eaf1f6;color:var(--navy);font-size:13px; }
+        .account-name { color:#263d52;font-size:13px;font-weight:700; }
+        .clearance { display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #d8e2e9;border-radius:4px;background:#f7f9fa;color:var(--navy);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap; }
+        .header-action { min-height:36px;padding:0 13px;border:1px solid #b7c9d7;border-radius:4px;background:white;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer; }
+        .header-action:hover { background:#f2f7fa; }
+        .header-action.emergency { border-color:#ddc88f;color:#765710; }
+        .header-action.emergency:hover { background:#fff9e8; }
+        .header-form { margin:0; }
+        .main-content { max-width:1380px;margin:0 auto;padding:34px 32px 56px; }
+        .page-heading { display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px; }
+        .page-kicker { margin:0 0 7px;color:var(--blue);font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase; }
+        h1,h2,h3,p { margin-top:0; }
+        .page-heading h1 { margin:0;color:var(--navy);font-family:Manrope,Arial,sans-serif;font-size:27px;line-height:1.2;letter-spacing:-.7px; }
+        .page-subtitle { margin:7px 0 0;color:var(--muted);font-size:13px; }
+        .record-total { display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--line);border-radius:4px;background:#fff;color:#43596c;font-size:12px;white-space:nowrap; }
+        .record-total strong { color:var(--navy);font-size:14px; }
+        .stats-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:24px; }
+        .stat-card { position:relative;overflow:hidden;min-height:112px;padding:17px 19px;border:1px solid var(--line);border-radius:5px;background:#fff; }
+        .stat-card::before { content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--blue); }
+        .stat-card.level-one::before { background:#55947b; }
+        .stat-card.level-two::before { background:#c29431; }
+        .stat-card.level-three::before { background:#b35f5c; }
+        .stat-label { margin:0 0 8px;color:#65788a;font-size:10px;font-weight:700;letter-spacing:.85px;text-transform:uppercase; }
+        .stat-value { margin:0;color:var(--navy);font-family:Manrope,Arial,sans-serif;font-size:27px;font-weight:700;line-height:1.1; }
+        .stat-note { margin:7px 0 0;color:#8a98a5;font-size:11px; }
+        .panel { margin-bottom:22px;border:1px solid var(--line);border-radius:5px;background:#fff;box-shadow:0 2px 7px rgba(10,35,58,.025); }
+        .panel-heading { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 21px;border-bottom:1px solid var(--line); }
+        .panel-title { margin:0;color:var(--navy);font-family:Manrope,Arial,sans-serif;font-size:16px;font-weight:700; }
+        .panel-description { margin:5px 0 0;color:var(--muted);font-size:12px; }
+        .audit-panel { border-top:3px solid #bd9b48; }
+        .audit-panel .panel-title { display:flex;align-items:center;gap:9px; }
+        .audit-panel .panel-title i { color:#98751f;font-size:14px; }
+        .audit-meta { display:inline-block;margin-top:6px;color:#8996a1;font-size:11px; }
+        .download-link { display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #c8d5df;border-radius:4px;color:var(--blue);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap; }
+        .download-link:hover { background:#f5f8fa; }
+        .audit-filters { display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:10px;padding:15px 21px;border-bottom:1px solid #e8edf1;background:#fbfcfd; }
+        .control { width:100%;height:38px;padding:0 11px;border:1px solid #ccd7df;border-radius:4px;background:#fff;color:#34495c;font-size:12px;outline:none; }
+        .control:focus { border-color:#4b83a8;box-shadow:0 0 0 3px rgba(20,91,145,.1); }
+        .filter-actions { display:flex;gap:8px; }
+        .button-primary,.button-secondary { min-height:38px;padding:0 13px;border:1px solid transparent;border-radius:4px;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer; }
+        .button-primary { background:var(--blue);color:#fff; }
+        .button-primary:hover { background:#0d4b7c; }
+        .button-secondary { display:inline-flex;align-items:center;border-color:#cbd6de;background:#fff;color:#455a6d; }
+        .button-secondary:hover { background:#f4f7f9; }
+        .audit-list { max-height:300px;overflow:auto; }
+        .audit-row { display:grid;grid-template-columns:minmax(130px,1fr) minmax(155px,auto) minmax(180px,1.2fr);align-items:center;gap:14px;padding:12px 21px;border-bottom:1px solid #edf1f4;font-size:12px; }
+        .audit-row:last-child { border-bottom:0; }
+        .audit-user { color:#32495d;font-weight:600;overflow-wrap:anywhere; }
+        .audit-time { color:#8794a0;font-size:11px; }
+        .audit-event { color:#536a7c;font-size:11px;overflow-wrap:anywhere; }
+        .empty-state { padding:24px;color:var(--muted);text-align:center;font-size:13px; }
+        .records-panel { overflow:hidden; }
+        .records-heading { align-items:center;padding:18px 21px; }
+        .search-controls { display:flex;align-items:center;gap:9px; }
+        .search-input { width:min(260px,26vw); }
+        .classification-select { width:160px; }
+        .clear-button { min-width:68px; }
+        .table-scroll { overflow:auto; }
+        table { width:100%;border-collapse:collapse;text-align:left; }
+        thead { position:sticky;top:72px;z-index:2;background:#f7f9fa; }
+        th { padding:12px 20px;border-bottom:1px solid var(--line);color:#718292;font-size:10px;font-weight:700;letter-spacing:.75px;text-transform:uppercase;white-space:nowrap; }
+        td { padding:12px 20px;border-bottom:1px solid #e9eef2;color:#43576a;font-size:12px; }
+        tbody tr:hover { background:#f8fafb; }
+        tbody tr[hidden] { display:none; }
+        td:first-child { color:#263d52;font-weight:600; }
+        td:last-child,th:last-child { text-align:right; }
+        .level-tag { display:inline-block;min-width:58px;padding:5px 7px;border:1px solid #dce4e9;border-radius:3px;background:#f7f9fa;color:#526779;font-size:10px;font-weight:700;text-align:center; }
+        .level-tag.level-1 { border-color:#d4e5dc;background:#f4f9f6;color:#48775f; }
+        .level-tag.level-2 { border-color:#e9dfc5;background:#fbf8ef;color:#8b6b24; }
+        .level-tag.level-3 { border-color:#ead4d2;background:#fcf5f4;color:#98504d; }
+        .view-link { color:var(--blue);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap; }
+        .view-link:hover { text-decoration:underline; }
+        .table-footer { display:flex;justify-content:space-between;gap:16px;padding:12px 20px;background:#fafbfc;color:#798895;font-size:11px; }
+        #noResults { padding:38px 20px;color:#6f8090;text-align:center; }
+        :focus-visible { outline:3px solid rgba(230,180,54,.75);outline-offset:2px; }
+        @media (max-width:900px) {
+            .nav-inner { padding:0 20px; }
+            .main-content { padding:28px 20px 42px; }
+            .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .records-heading { align-items:flex-start;flex-direction:column; }
+            .search-controls { width:100%; }
+            .search-input { flex:1;width:auto; }
+            .classification-select { width:180px; }
+        }
+        @media (max-width:620px) {
+            .nav-inner { min-height:64px;padding:0 16px;gap:10px; }
+            .brand-mark { width:34px;height:34px; }
+            .brand-name { font-size:16px; }
+            .header-tools { gap:9px; }
+            .account { gap:7px; }
+            .account-name { display:none; }
+            .clearance { padding:6px 8px;font-size:9px; }
+            .header-action { min-height:34px;padding:0 9px;font-size:10px; }
+            .main-content { padding:24px 14px 34px; }
+            .page-heading { align-items:flex-start;flex-direction:column;gap:12px; }
+            .page-heading h1 { font-size:24px; }
+            .stats-grid { gap:9px; }
+            .stat-card { min-height:102px;padding:14px; }
+            .stat-value { font-size:24px; }
+            .panel-heading { align-items:flex-start;flex-direction:column;padding:16px; }
+            .audit-filters { grid-template-columns:1fr;padding:13px 16px; }
+            .filter-actions { width:100%; }
+            .filter-actions > * { flex:1;justify-content:center; }
+            .audit-row { grid-template-columns:1fr;gap:5px;padding:12px 16px; }
+            .search-controls { display:grid;grid-template-columns:1fr 1fr; }
+            .search-input { grid-column:1 / -1;width:100%; }
+            .classification-select { width:100%; }
+            .clear-button { width:100%; }
+            th,td { padding:11px 13px; }
+            .table-footer { flex-direction:column;gap:5px;padding:12px 14px; }
+        }
+        @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important;transition:none!important; } }
+    </style>
 </head>
-<body class="font-sans relative bg-slate-950 min-h-screen overflow-x-hidden overflow-y-auto">
-    <div id="tsparticles" class="fixed inset-0 z-0"></div>
-    <div class="relative z-10">
-        <nav class="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-            <div class="flex items-center space-x-3">
-                <span class="text-3xl">🏥</span>
-                <span class="text-2xl font-extrabold tracking-tight text-gray-950">SecureHealth<span class="text-blue-600">DB</span></span>
-            </div>
-            <div class="flex items-center space-x-6">
-                <span class="font-bold text-gray-950">{{ session['username'] }}</span>
-                <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full {{ 'bg-red-100 text-red-700' if session['clearance'] == 3 else 'bg-purple-100 text-purple-700' if session['clearance'] == 2 else 'bg-amber-100 text-amber-700' }}">
-                    <i class="fas fa-shield-alt mr-1"></i> Level {{ session['clearance'] }}
-                </span>
+<body>
+    <div class="top-rule" aria-hidden="true"></div>
+    <header class="site-header">
+        <nav class="nav-inner" aria-label="Main navigation">
+            <a class="brand" href="/" aria-label="SecureHealth dashboard">
+                <span class="brand-mark" aria-hidden="true"><i class="fas fa-plus"></i></span>
+                <span class="brand-name">Secure<span>Health</span></span>
+            </a>
+            <div class="header-tools">
+                <div class="account"><span class="account-avatar" aria-hidden="true"><i class="fas fa-user"></i></span><span class="account-name">{{ session['username'] }}</span></div>
+                <span class="clearance"><i class="fas fa-shield-alt" aria-hidden="true"></i> Level {{ session['clearance'] }}</span>
                 {% if session['clearance'] < 3 %}
-                <form method="post" action="/emergency_override">
+                <form method="post" action="/emergency_override" class="header-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="bg-red-600 text-white text-xs font-black px-4 py-2 rounded uppercase tracking-wider hover:bg-red-700">
-                        Request Emergency Access
-                    </button>
+                    <button type="submit" class="header-action emergency">Request Emergency Access</button>
                 </form>
                 {% endif %}
-                <form method="post" action="/logout">
+                <form method="post" action="/logout" class="header-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="text-sm font-semibold text-gray-500 hover:text-red-600">Sign Out</button>
+                    <button type="submit" class="header-action">Sign out</button>
                 </form>
             </div>
         </nav>
+    </header>
 
-        <main class="max-w-6xl mx-auto px-6 py-12 space-y-10">
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Accessible Records</p>
-                    <p class="text-3xl font-extrabold text-slate-900 mt-2">{{ dashboard_stats['accessible_records'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Records available at your clearance</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Level 1 Records</p>
-                    <p class="text-3xl font-extrabold text-emerald-600 mt-2">{{ dashboard_stats['classification_counts'][1] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Accessible classification count</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Level 2 Records</p>
-                    <p class="text-3xl font-extrabold text-amber-600 mt-2">{{ dashboard_stats['classification_counts'][2] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Accessible classification count</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Level 3 Records</p>
-                    <p class="text-3xl font-extrabold text-red-600 mt-2">{{ dashboard_stats['classification_counts'][3] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Accessible classification count</p>
-                </div>
-            </section>
-            {% if session['clearance'] == 3 %}
-            <div class="bg-white/95 border border-gray-100 rounded-2xl shadow-lg p-8">
-                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
-                    <div>
-                        <h3 class="text-2xl font-extrabold text-gray-950">Intrusion Detection & Audit Alerts</h3>
-                        <p class="text-xs text-gray-500 mt-1">Showing {{ alerts|length }} of {{ audit_total }} recorded events (latest 200)</p>
-                    </div>
-                    <a href="/download_audit" class="bg-white border border-red-200 text-red-700 px-5 py-2.5 rounded-lg text-sm font-bold text-center">Download Audit CSV</a>
-                </div>
-                <form method="get" action="{{ url_for('home') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                    <input type="search" name="audit_user" value="{{ audit_user_filter }}" placeholder="Search username..." aria-label="Search audit username" class="px-4 py-2 border border-gray-200 rounded-lg text-sm">
-                    <select name="audit_event" aria-label="Filter audit event type" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white">
-                        <option value="all" {% if audit_event_filter == 'all' %}selected{% endif %}>All event types</option>
-                        <option value="successful" {% if audit_event_filter == 'successful' %}selected{% endif %}>Successful logins</option>
-                        <option value="failed" {% if audit_event_filter == 'failed' %}selected{% endif %}>Failed logins</option>
-                        <option value="updates" {% if audit_event_filter == 'updates' %}selected{% endif %}>Record updates</option>
-                        <option value="emergency" {% if audit_event_filter == 'emergency' %}selected{% endif %}>Emergency requests</option>
-                    </select>
-                    <div class="flex gap-2">
-                        <button type="submit" class="flex-1 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-700">Apply filters</button>
-                        <a href="{{ url_for('home') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700">Clear</a>
-                    </div>
-                </form>
-                {% if alerts %}
-                <div class="border border-red-100 rounded-xl overflow-hidden divide-y divide-red-100">
-                    {% for alert in alerts %}
-                    <div class="p-5 text-sm flex flex-wrap justify-between gap-3">
-                        <span><strong>Action by:</strong> {{ alert[0] }}</span>
-                        <span class="text-gray-500 text-xs">{{ alert[1] }}</span>
-                        <span class="text-red-700 text-xs font-bold">{{ alert[2] }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-gray-500">No security events recorded yet.</p>
-                {% endif %}
+    <main class="main-content">
+        <section class="page-heading" aria-labelledby="dashboard-title">
+            <div><p class="page-kicker">Care team workspace</p><h1 id="dashboard-title">Patient records</h1><p class="page-subtitle">Review records available to your account.</p></div>
+            <div class="record-total"><i class="fas fa-folder-open" aria-hidden="true"></i><strong>{{ dashboard_stats['accessible_records'] }}</strong> accessible records</div>
+        </section>
+
+        <section class="stats-grid" aria-label="Accessible record summary">
+            <article class="stat-card"><p class="stat-label">Accessible records</p><p class="stat-value">{{ dashboard_stats['accessible_records'] }}</p><p class="stat-note">Available at your clearance</p></article>
+            <article class="stat-card level-one"><p class="stat-label">Level 1 records</p><p class="stat-value">{{ dashboard_stats['classification_counts'][1] }}</p><p class="stat-note">Accessible classification count</p></article>
+            <article class="stat-card level-two"><p class="stat-label">Level 2 records</p><p class="stat-value">{{ dashboard_stats['classification_counts'][2] }}</p><p class="stat-note">Accessible classification count</p></article>
+            <article class="stat-card level-three"><p class="stat-label">Level 3 records</p><p class="stat-value">{{ dashboard_stats['classification_counts'][3] }}</p><p class="stat-note">Accessible classification count</p></article>
+        </section>
+
+        {% if session['clearance'] == 3 %}
+        <section class="panel audit-panel" aria-labelledby="audit-title">
+            <div class="panel-heading">
+                <div><h2 class="panel-title" id="audit-title"><i class="fas fa-shield-halved" aria-hidden="true"></i> Security audit</h2><p class="panel-description">Recent activity recorded by SecureHealth.</p><span class="audit-meta">Showing {{ alerts|length }} of {{ audit_total }} recorded events (latest 200)</span></div>
+                <a href="/download_audit" class="download-link"><i class="fas fa-download" aria-hidden="true"></i> Download audit CSV</a>
             </div>
+            <form method="get" action="{{ url_for('home') }}" class="audit-filters">
+                <input type="search" name="audit_user" value="{{ audit_user_filter }}" placeholder="Search username..." aria-label="Search audit username" class="control">
+                <select name="audit_event" aria-label="Filter audit event type" class="control">
+                    <option value="all" {% if audit_event_filter == 'all' %}selected{% endif %}>All event types</option>
+                    <option value="successful" {% if audit_event_filter == 'successful' %}selected{% endif %}>Successful logins</option>
+                    <option value="failed" {% if audit_event_filter == 'failed' %}selected{% endif %}>Failed logins</option>
+                    <option value="updates" {% if audit_event_filter == 'updates' %}selected{% endif %}>Record updates</option>
+                    <option value="emergency" {% if audit_event_filter == 'emergency' %}selected{% endif %}>Emergency requests</option>
+                </select>
+                <div class="filter-actions"><button type="submit" class="button-primary">Apply filters</button><a href="{{ url_for('home') }}" class="button-secondary">Clear</a></div>
+            </form>
+            {% if alerts %}
+            <div class="audit-list">
+                {% for alert in alerts %}
+                <div class="audit-row"><span class="audit-user"><i class="fas fa-user-circle" aria-hidden="true"></i> {{ alert[0] }}</span><span class="audit-time">{{ alert[1] }}</span><span class="audit-event">{{ alert[2] }}</span></div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state">No security events recorded yet.</p>
             {% endif %}
+        </section>
+        {% endif %}
 
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-lg overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-100 bg-slate-50 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-2xl font-extrabold text-gray-950">Patient Records Dashboard</h3>
-                        <p class="text-xs text-gray-500 mt-1">Bell-LaPadula Access Control • Patient Data Masking</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                        <input type="search" id="liveSearch" placeholder="Search name or diagnosis..." aria-label="Search patient name or diagnosis" class="px-4 py-2 border border-gray-200 rounded-lg w-full sm:w-72 text-sm">
-                        <select id="classificationFilter" aria-label="Filter by classification" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white">
-                            <option value="all">All classifications</option>
-                            {% if session['clearance'] >= 1 %}<option value="1">Level 1</option>{% endif %}
-                            {% if session['clearance'] >= 2 %}<option value="2">Level 2</option>{% endif %}
-                            {% if session['clearance'] >= 3 %}<option value="3">Level 3</option>{% endif %}
-                        </select>
-                        <button type="button" id="clearFilters" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-100">Clear</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-700">
-                        <thead class="bg-white text-slate-500 text-xs uppercase font-bold border-b">
-                            <tr><th class="px-8 py-5">Patient Name</th><th class="px-8 py-5">Medical Diagnosis</th><th class="px-8 py-5">Classification</th><th class="px-8 py-5 text-right">Action</th></tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 bg-white" id="patientTableBody">
-                            {% for record in records %}
-                            <tr class="hover:bg-blue-50/30 patient-row" data-classification="{{ record['security_label'] }}">
-                                <td class="px-8 py-5 font-semibold">{{ record['patient_name'] }}</td>
-                                <td class="px-8 py-5">{{ record['diagnosis'] }}</td>
-                                <td class="px-8 py-5">Level {{ record['security_label'] }}</td>
-                                <td class="px-8 py-5 text-right"><a href="/patient/{{ record['id'] }}" class="text-blue-600 font-bold">View File →</a></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <div class="px-8 py-3 bg-slate-50 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
-                        <span id="resultsCount" aria-live="polite">Showing {{ records|length }} of {{ records|length }} accessible records</span>
-                        <span>Search and filters apply only to records you can access.</span>
-                    </div>
-                    <div id="noResults" class="hidden text-center py-10 text-gray-500">No matching records found. Try changing your search or filters.</div>
+        <section class="panel records-panel" aria-labelledby="records-title">
+            <div class="panel-heading records-heading">
+                <div><h2 class="panel-title" id="records-title">Patient directory</h2><p class="panel-description">Search and filter the patient records you can access.</p></div>
+                <div class="search-controls">
+                    <input type="search" id="liveSearch" placeholder="Search name or diagnosis..." aria-label="Search patient name or diagnosis" class="control search-input">
+                    <select id="classificationFilter" aria-label="Filter by classification" class="control classification-select">
+                        <option value="all">All classifications</option>
+                        {% if session['clearance'] >= 1 %}<option value="1">Level 1</option>{% endif %}
+                        {% if session['clearance'] >= 2 %}<option value="2">Level 2</option>{% endif %}
+                        {% if session['clearance'] >= 3 %}<option value="3">Level 3</option>{% endif %}
+                    </select>
+                    <button type="button" id="clearFilters" class="button-secondary clear-button">Clear</button>
                 </div>
             </div>
-        </main>
-    </div>
+            <div class="table-scroll">
+                <table>
+                    <thead><tr><th scope="col">Patient name</th><th scope="col">Medical diagnosis</th><th scope="col">Classification</th><th scope="col">Record</th></tr></thead>
+                    <tbody id="patientTableBody">
+                        {% for record in records %}
+                        <tr class="patient-row" data-classification="{{ record['security_label'] }}">
+                            <td>{{ record['patient_name'] }}</td>
+                            <td>{{ record['diagnosis'] }}</td>
+                            <td><span class="level-tag level-{{ record['security_label'] }}">Level {{ record['security_label'] }}</span></td>
+                            <td><a href="/patient/{{ record['id'] }}" class="view-link">View record <i class="fas fa-arrow-right" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div id="noResults" class="hidden">No matching records found. Try changing your search or filters.</div>
+            </div>
+            <div class="table-footer"><span id="resultsCount" aria-live="polite">Showing {{ records|length }} of {{ records|length }} accessible records</span><span>Search and filters apply only to records you can access.</span></div>
+        </section>
+    </main>
     <script>
-        // Keep decorative particles isolated so a CDN or animation error
-        // cannot prevent the patient search controls from working.
-        if (window.tsParticles) {
-            try {
-                tsParticles.load("tsparticles", {
-                    background: { color: "#0a0f1e" },
-                    fpsLimit: 60,
-                    interactivity: {
-                        events: {
-                            onClick: { enable: true, mode: "push" },
-                            onHover: { enable: true, mode: "repulse" },
-                            resize: true
-                        },
-                        modes: {
-                            push: { quantity: 4 },
-                            repulse: { distance: 100, duration: 0.4 }
-                        }
-                    },
-                    particles: {
-                        color: { value: "#3b82f6" },
-                        links: {
-                            color: "#3b82f6",
-                            distance: 150,
-                            enable: true,
-                            opacity: 0.3,
-                            width: 1
-                        },
-                        move: { enable: true, speed: 1.5 },
-                        number: { density: { enable: true, area: 1000 }, value: 70 },
-                        opacity: { value: 0.5 },
-                        shape: { type: "circle" },
-                        size: { value: { min: 1, max: 4 } }
-                    }
-                }).catch(error => console.warn("Particle background unavailable:", error));
-            } catch (error) {
-                console.warn("Particle background unavailable:", error);
-            }
-        }
-
         // Patient search and classification filtering.
         document.addEventListener("DOMContentLoaded", function () {
             const searchInput = document.getElementById("liveSearch");
@@ -229,3 +289,4 @@
     </script>
 </body>
 </html>
+

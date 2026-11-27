@@ -97,6 +97,12 @@ python app.py
 
 Open http://127.0.0.1:5000. On first launch, the application creates `hospital.db` with synthetic sample records and demo accounts. The database is local and excluded from Git. Existing local records are retained.
 
+## Optional Render demo
+
+The repository includes a Render Blueprint for a free, synthetic-data demo. Create a new Blueprint from this repository and deploy the `render.yaml` configuration. Render generates a private `SECRET_KEY` and a separate `DEMO_DOCTOR_PASSWORD`; use `dr_smith` with that generated password for the hosted demo. Keep the password private.
+
+The free service may take about a minute to wake after inactivity. Its filesystem is temporary, so the 350 synthetic records and any edits can reset when the service restarts or spins down. The local database is not uploaded or used by Render. This setup is for demonstrating the prototype with dummy data only.
+
 ## Demo accounts
 
 | Role | Username | Demo password | Clearance |
@@ -189,4 +195,5 @@ SecureHealth/
 - Add stronger audit-log integrity controls and privacy-preserving reporting.
 - Add broader route and workflow tests, including login, record editing, emergency requests, and audit-filter combinations.
 - Complete independent security testing and applicable legal/compliance review before real-world use.
+
 
