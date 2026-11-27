@@ -186,6 +186,8 @@ def edit_patient(patient_id):
 def emergency_override():
     if "username" not in session:
         return redirect(url_for("login"))
+    if session.get("clearance") == 3:
+        abort(403, description="Level 3 users do not need to request emergency elevation.")
 
     # A user cannot grant themselves a higher clearance level.
     log_event(session["username"], "EMERGENCY_ACCESS_REQUESTED - approval required")
