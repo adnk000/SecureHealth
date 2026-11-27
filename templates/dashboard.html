@@ -87,7 +87,16 @@
                         <h3 class="text-2xl font-extrabold text-gray-950">Patient Records Dashboard</h3>
                         <p class="text-xs text-gray-500 mt-1">Bell-LaPadula Access Control • Patient Data Masking</p>
                     </div>
-                    <input type="text" id="liveSearch" placeholder="Search accessible records..." class="px-4 py-2 border border-gray-200 rounded-lg w-72 text-sm">
+                    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <input type="search" id="liveSearch" placeholder="Search name or diagnosis..." aria-label="Search patient name or diagnosis" class="px-4 py-2 border border-gray-200 rounded-lg w-full sm:w-72 text-sm">
+                        <select id="classificationFilter" aria-label="Filter by classification" class="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                            <option value="all">All classifications</option>
+                            {% if session['clearance'] >= 1 %}<option value="1">Level 1</option>{% endif %}
+                            {% if session['clearance'] >= 2 %}<option value="2">Level 2</option>{% endif %}
+                            {% if session['clearance'] >= 3 %}<option value="3">Level 3</option>{% endif %}
+                        </select>
+                        <button type="button" id="clearFilters" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-100">Clear</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-gray-700">
@@ -96,7 +105,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white" id="patientTableBody">
                             {% for record in records %}
-                            <tr class="hover:bg-blue-50/30 patient-row">
+                            <tr class="hover:bg-blue-50/30 patient-row" data-classification="{{ record['security_label'] }}">
                                 <td class="px-8 py-5 font-semibold">{{ record['patient_name'] }}</td>
                                 <td class="px-8 py-5">{{ record['diagnosis'] }}</td>
                                 <td class="px-8 py-5">Level {{ record['security_label'] }}</td>
@@ -105,7 +114,11 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    <div id="noResults" class="hidden text-center py-10 text-gray-500">No matching records found.</div>
+                    <div class="px-8 py-3 bg-slate-50 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
+                        <span id="resultsCount" aria-live="polite">Showing {{ records|length }} of {{ records|length }} accessible records</span>
+                        <span>Search and filters apply only to records you can access.</span>
+                    </div>
+                    <div id="noResults" class="hidden text-center py-10 text-gray-500">No matching records found. Try changing your search or filters.</div>
                 </div>
             </div>
         </main>
@@ -114,15 +127,37 @@
         if (window.tsParticles) {
             tsParticles.load("tsparticles", { background: { color: "#0a0f1e" }, fpsLimit: 60, interactivity: { events: { onClick: { enable: true, mode: "push" }, onHover: { enable: true, mode: "repulse" }, resize: true }, modes: { push: { quantity: 4 }, repulse: { distance: 100, duration: 0.4 } } }, particles: { color: { value: "#3b82f6" }, links: { color: "#3b82f6", distance: 150, enable: true, opacity: 0.3, width: 1 }, move: { enable: true, speed: 1.5 }, number: { density: { enable: true, area: 1000 }, value: 70 }, opacity: { value: 0.5 }, shape: { type: "circle" }, size: { value: { min: 1, max: 4 } } });
         }
-        document.getElementById('liveSearch').addEventListener('input', function () {
-            const filter = this.value.toLowerCase();
+        const searchInput = document.getElementById('liveSearch');
+        const classificationFilter = document.getElementById('classificationFilter');
+        const clearFilters = document.getElementById('clearFilters');
+        const patientRows = Array.from(document.querySelectorAll('.patient-row'));
+        const noResults = document.getElementById('noResults');
+        const resultsCount = document.getElementById('resultsCount');
+
+        function filterPatients() {
+            const query = searchInput.value.trim().toLocaleLowerCase();
+            const selectedLevel = classificationFilter.value;
             let visible = 0;
-            document.querySelectorAll('.patient-row').forEach(row => {
-                const match = row.textContent.toLowerCase().includes(filter);
-                row.style.display = match ? '' : 'none';
-                if (match) visible++;
+
+            patientRows.forEach(row => {
+                const matchesText = row.textContent.toLocaleLowerCase().includes(query);
+                const matchesLevel = selectedLevel === 'all' ||
+                    row.dataset.classification === selectedLevel;
+                const show = matchesText && matchesLevel;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
             });
-            document.getElementById('noResults').classList.toggle('hidden', visible > 0);
+
+            noResults.classList.toggle('hidden', visible !== 0);
+            resultsCount.textContent = `Showing ${visible} of ${patientRows.length} accessible records`;
+        }
+
+        searchInput.addEventListener('input', filterPatients);
+        classificationFilter.addEventListener('change', filterPatients);
+        clearFilters.addEventListener('click', () => {
+            searchInput.value = '';
+            classificationFilter.value = 'all';
+            filterPatients();
         });
     </script>
 </body>
