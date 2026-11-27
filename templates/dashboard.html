@@ -17,9 +17,7 @@
                 <span class="text-2xl font-extrabold tracking-tight text-gray-950">SecureHealth<span class="text-blue-600">DB</span></span>
             </div>
             <div class="flex items-center space-x-6">
-                <div class="flex items-center space-x-3 text-sm">
-                    <span class="font-bold text-gray-950">{{ session['username'] }}</span>
-                </div>
+                <span class="font-bold text-gray-950">{{ session['username'] }}</span>
                 <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full {{ 'bg-red-100 text-red-700' if session['clearance'] == 3 else 'bg-purple-100 text-purple-700' if session['clearance'] == 2 else 'bg-amber-100 text-amber-700' }}">
                     <i class="fas fa-shield-alt mr-1"></i> Level {{ session['clearance'] }}
                 </span>
