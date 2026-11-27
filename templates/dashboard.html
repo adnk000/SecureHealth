@@ -124,39 +124,89 @@
         </main>
     </div>
     <script>
+        // Keep decorative particles isolated so a CDN or animation error
+        // cannot prevent the patient search controls from working.
         if (window.tsParticles) {
-            tsParticles.load("tsparticles", { background: { color: "#0a0f1e" }, fpsLimit: 60, interactivity: { events: { onClick: { enable: true, mode: "push" }, onHover: { enable: true, mode: "repulse" }, resize: true }, modes: { push: { quantity: 4 }, repulse: { distance: 100, duration: 0.4 } } }, particles: { color: { value: "#3b82f6" }, links: { color: "#3b82f6", distance: 150, enable: true, opacity: 0.3, width: 1 }, move: { enable: true, speed: 1.5 }, number: { density: { enable: true, area: 1000 }, value: 70 }, opacity: { value: 0.5 }, shape: { type: "circle" }, size: { value: { min: 1, max: 4 } } });
+            try {
+                tsParticles.load("tsparticles", {
+                    background: { color: "#0a0f1e" },
+                    fpsLimit: 60,
+                    interactivity: {
+                        events: {
+                            onClick: { enable: true, mode: "push" },
+                            onHover: { enable: true, mode: "repulse" },
+                            resize: true
+                        },
+                        modes: {
+                            push: { quantity: 4 },
+                            repulse: { distance: 100, duration: 0.4 }
+                        }
+                    },
+                    particles: {
+                        color: { value: "#3b82f6" },
+                        links: {
+                            color: "#3b82f6",
+                            distance: 150,
+                            enable: true,
+                            opacity: 0.3,
+                            width: 1
+                        },
+                        move: { enable: true, speed: 1.5 },
+                        number: { density: { enable: true, area: 1000 }, value: 70 },
+                        opacity: { value: 0.5 },
+                        shape: { type: "circle" },
+                        size: { value: { min: 1, max: 4 } }
+                    }
+                }).catch(error => console.warn("Particle background unavailable:", error));
+            } catch (error) {
+                console.warn("Particle background unavailable:", error);
+            }
         }
-        const searchInput = document.getElementById('liveSearch');
-        const classificationFilter = document.getElementById('classificationFilter');
-        const clearFilters = document.getElementById('clearFilters');
-        const patientRows = Array.from(document.querySelectorAll('.patient-row'));
-        const noResults = document.getElementById('noResults');
-        const resultsCount = document.getElementById('resultsCount');
 
-        function filterPatients() {
-            const query = searchInput.value.trim().toLocaleLowerCase();
-            const selectedLevel = classificationFilter.value;
-            let visible = 0;
+        // Patient search and classification filtering.
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.getElementById("liveSearch");
+            const classificationFilter = document.getElementById("classificationFilter");
+            const clearFilters = document.getElementById("clearFilters");
+            const patientRows = Array.from(document.querySelectorAll(".patient-row"));
+            const noResults = document.getElementById("noResults");
+            const resultsCount = document.getElementById("resultsCount");
 
-            patientRows.forEach(row => {
-                const matchesText = row.textContent.toLocaleLowerCase().includes(query);
-                const matchesLevel = selectedLevel === 'all' ||
-                    row.dataset.classification === selectedLevel;
-                const show = matchesText && matchesLevel;
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
+            if (!searchInput || !classificationFilter || !clearFilters ||
+                !noResults || !resultsCount) {
+                console.error("SecureHealth search controls could not be initialized.");
+                return;
+            }
+
+            function filterPatients() {
+                const query = searchInput.value.trim().toLocaleLowerCase();
+                const selectedLevel = classificationFilter.value;
+                let visible = 0;
+
+                patientRows.forEach(row => {
+                    const searchableText = row.textContent.toLocaleLowerCase();
+                    const matchesText = searchableText.includes(query);
+                    const matchesLevel = selectedLevel === "all" ||
+                        row.dataset.classification === selectedLevel;
+                    const shouldShow = matchesText && matchesLevel;
+
+                    row.hidden = !shouldShow;
+                    if (shouldShow) visible += 1;
+                });
+
+                noResults.classList.toggle("hidden", visible !== 0);
+                resultsCount.textContent =
+                    `Showing ${visible} of ${patientRows.length} accessible records`;
+            }
+
+            searchInput.addEventListener("input", filterPatients);
+            classificationFilter.addEventListener("change", filterPatients);
+            clearFilters.addEventListener("click", function () {
+                searchInput.value = "";
+                classificationFilter.value = "all";
+                filterPatients();
             });
 
-            noResults.classList.toggle('hidden', visible !== 0);
-            resultsCount.textContent = `Showing ${visible} of ${patientRows.length} accessible records`;
-        }
-
-        searchInput.addEventListener('input', filterPatients);
-        classificationFilter.addEventListener('change', filterPatients);
-        clearFilters.addEventListener('click', () => {
-            searchInput.value = '';
-            classificationFilter.value = 'all';
             filterPatients();
         });
     </script>
