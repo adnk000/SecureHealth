@@ -201,7 +201,7 @@ code.sky{background:rgba(56,189,248,.2)}
       <div class="slide-num"><span></span>02 / 10 — Overview</div>
       <h1>🔍 What We Built</h1>
       <div class="divider"></div>
-      <p class="subtitle">A secure medical records system focused on confidentiality, integrity, and accountability.</p>
+      <p class="subtitle">A demonstration medical-records application focused on confidentiality, access control, and accountability.</p>
       <div class="grid">
         <div class="panel">
           <div class="panel-icon">🛡️</div>
@@ -298,7 +298,7 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">📤</div>
           <div class="panel-title">Audit CSV Export</div>
-          <div class="panel-text">Doctors can download a full security audit as a machine-readable CSV, enabling integration with SIEM tools or compliance reporting pipelines.</div>
+          <div class="panel-text">Level 3 users can download the recorded security events as a CSV file for review.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🆘</div>
@@ -307,7 +307,7 @@ code.sky{background:rgba(56,189,248,.2)}
         </div>
         <div class="panel">
           <div class="panel-icon">🔎</div>
-          <div class="panel-title">Real-Time Alerts</div>
+          <div class="panel-title">Audit Event Review</div>
           <div class="panel-text">Dashboard surfaces recent suspicious events. Recent security events are displayed to Level 3 users for manual review.</div>
         </div>
       </div>
@@ -333,7 +333,7 @@ code.sky{background:rgba(56,189,248,.2)}
         <div class="panel">
           <div class="panel-icon">🎛️</div>
           <div class="panel-title">Scoped Dashboard Views</div>
-          <div class="panel-text">The dashboard filters records in real time based on clearance rules. Users see only what they are authorized for — no client-side filtering tricks.</div>
+          <div class="panel-text">The server filters records by clearance before rendering the dashboard. The search field only filters the records already returned to the current user.</div>
         </div>
         <div class="panel">
           <div class="panel-icon">🛂</div>
@@ -386,7 +386,7 @@ code.sky{background:rgba(56,189,248,.2)}
       <div class="feature-list">
         <div class="feature-card">
           <strong>🐍 Backend</strong>
-          <span>Python 3 + Flask deliver routing, auth, and session management. Jinja2 templates render role-aware views server-side for zero client-side data leaks.</span>
+          <span>Python 3 + Flask deliver routing, auth, and session management. Jinja2 templates render role-aware views server-side.</span>
         </div>
         <div class="feature-card">
           <strong>🗄️ Storage</strong>
