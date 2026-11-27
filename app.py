@@ -15,27 +15,49 @@ from security import can_user_read, hash_password, mask_name, verify_password
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE_PATH = BASE_DIR / "hospital.db"
 
+
+def load_secret_key():
+    """Use an environment secret, or create a local ignored key for development."""
+    configured_key = os.environ.get("SECRET_KEY")
+    if configured_key:
+        return configured_key
+
+    key_file = BASE_DIR / ".secret_key"
+    try:
+        if key_file.exists():
+            return key_file.read_text(encoding="utf-8").strip()
+        generated_key = secrets.token_hex(32)
+        key_file.write_text(generated_key, encoding="utf-8")
+        try:
+            key_file.chmod(0o600)
+        except OSError:
+            pass
+        return generated_key
+    except OSError as exc:
+        raise RuntimeError(
+            "Set SECRET_KEY in your environment; SecureHealth could not create a local key."
+        ) from exc
+
+
 app = Flask(__name__)
 app.config.update(
-    SECRET_KEY=os.environ.get("SECRET_KEY"),
+    SECRET_KEY=load_secret_key(),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
     PERMANENT_SESSION_LIFETIME=1800,
 )
 
-if not app.config["SECRET_KEY"]:
-    raise RuntimeError(
-        "SECRET_KEY is not set. Set it in your environment before starting SecureHealth."
-    )
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def utc_timestamp():
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
 
 def log_event(username, event):
     conn = get_db_connection()
@@ -46,9 +68,10 @@ def log_event(username, event):
     conn.commit()
     conn.close()
 
+
 @app.before_request
 def protect_post_requests():
-    # Create a per-session CSRF token and validate every state-changing POST.
+    # A per-session token protects every state-changing POST request.
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_urlsafe(32)
 
@@ -58,9 +81,11 @@ def protect_post_requests():
         if not expected or not hmac.compare_digest(supplied, expected):
             abort(400, description="Invalid or missing CSRF token.")
 
+
 @app.context_processor
 def inject_csrf_token():
     return {"csrf_token": session.get("csrf_token", "")}
+
 
 @app.route("/")
 def home():
@@ -88,9 +113,11 @@ def home():
         "dashboard.html", records=accessible_records, alerts=alerts
     )
 
+
 @app.route("/presentation")
 def presentation():
     return render_template("presentation.html")
+
 
 @app.route("/patient/<int:patient_id>")
 def patient_detail(patient_id):
@@ -112,6 +139,7 @@ def patient_detail(patient_id):
     if session.get("clearance") == 1:
         item["patient_name"] = mask_name(item["patient_name"])
     return render_template("detail.html", record=item)
+
 
 @app.route("/patient/<int:patient_id>/edit", methods=["GET", "POST"])
 def edit_patient(patient_id):
@@ -153,6 +181,7 @@ def edit_patient(patient_id):
     conn.close()
     return render_template("edit.html", record=record)
 
+
 @app.route("/emergency_override", methods=["POST"])
 def emergency_override():
     if "username" not in session:
@@ -160,7 +189,12 @@ def emergency_override():
 
     # A user cannot grant themselves a higher clearance level.
     log_event(session["username"], "EMERGENCY_ACCESS_REQUESTED - approval required")
-    return redirect(url_for("home"))
+    return (
+        "Emergency access request logged. Your clearance was NOT changed. "
+        "A separate authorized administrator must approve emergency access.",
+        403,
+    )
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -188,6 +222,7 @@ def login():
                 conn.commit()
             conn.close()
 
+            # Rotate the session and CSRF token after authentication.
             session.clear()
             session["username"] = username
             session["clearance"] = int(row["clearance_level"])
@@ -201,6 +236,7 @@ def login():
         return render_template("login.html", error="Invalid login credentials."), 401
 
     return render_template("login.html", error=None)
+
 
 @app.route("/download_audit")
 def download_audit():
@@ -221,15 +257,19 @@ def download_audit():
     writer.writerows([tuple(row) for row in logs])
 
     response = make_response(output.getvalue())
-    response.headers["Content-Disposition"] = "attachment; filename=SecureHealth_Audit_Report.csv"
+    response.headers["Content-Disposition"] = (
+        "attachment; filename=SecureHealth_Audit_Report.csv"
+    )
     response.headers["Content-Type"] = "text/csv; charset=utf-8"
     response.headers["Cache-Control"] = "no-store"
     return response
+
 
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 @app.after_request
 def add_security_headers(response):
@@ -239,6 +279,8 @@ def add_security_headers(response):
     response.headers["Cache-Control"] = "no-store"
     return response
 
+
 if __name__ == "__main__":
     init_db()
+    # Debug mode is deliberately disabled.
     app.run(debug=False)
