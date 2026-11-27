@@ -1,4 +1,9 @@
 venv/
+.venv/
 __pycache__/
-*.pyc
-hospital.db
+*.py[cod]
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.coverage
